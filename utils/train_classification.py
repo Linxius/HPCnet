@@ -101,8 +101,10 @@ for epoch in range(opt.nepoch):
     for i, data in enumerate(dataloader, 0):
         points, target = data
         target = target[:, 0]
+        #print(points.size())
         points = points.transpose(2, 1)
         points, target = points.cuda(), target.cuda()
+        # print(points.size())
         optimizer.zero_grad()
         classifier = classifier.train()
         pred, trans, trans_feat = classifier(points)

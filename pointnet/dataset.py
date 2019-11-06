@@ -5,7 +5,7 @@ import os.path
 import torch
 import numpy as np
 import sys
-from tqdm import tqdm 
+from tqdm import tqdm
 import json
 from plyfile import PlyData, PlyElement
 
@@ -27,7 +27,7 @@ def get_segmentation_classes(root):
         for fn in fns:
             token = (os.path.splitext(os.path.basename(fn))[0])
             meta[item].append((os.path.join(dir_point, token + '.pts'), os.path.join(dir_seg, token + '.seg')))
-    
+
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../misc/num_seg_classes.txt'), 'w') as f:
         for item in cat:
             datapath = []
@@ -68,7 +68,7 @@ class ShapeNetDataset(data.Dataset):
         self.data_augmentation = data_augmentation
         self.classification = classification
         self.seg_classes = {}
-        
+
         with open(self.catfile, 'r') as f:
             for line in f:
                 ls = line.strip().split()
@@ -212,4 +212,3 @@ if __name__ == '__main__':
         d = ModelNetDataset(root=datapath)
         print(len(d))
         print(d[0])
-

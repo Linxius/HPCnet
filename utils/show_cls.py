@@ -21,7 +21,7 @@ opt = parser.parse_args()
 print(opt)
 
 test_dataset = ShapeNetDataset(
-    root='shapenetcore_partanno_segmentation_benchmark_v0',
+    root='../../data/shapenet_core/',
     split='test',
     classification=True,
     npoints=opt.num_points,
