@@ -11,6 +11,7 @@ from pointnet.model import feature_transform_regularizer
 import torch.nn.functional as F
 from tqdm import tqdm
 from GTnet.model import GtNetCls
+from GTnet.getGtFeature import getGtFeature, gt_feature_len
 
 
 parser = argparse.ArgumentParser()
@@ -85,7 +86,8 @@ try:
 except OSError:
     pass
 
-classifier = GtNetCls(k=num_classes, feature_transform=opt.feature_transform)
+classifier = GtNetCls(k=num_classes, feature_transform=opt.feature_transform, \
+                      gt_feature_len = gt_feature_len)
 
 if opt.model != '':
     classifier.load_state_dict(torch.load(opt.model))
@@ -102,10 +104,15 @@ for epoch in range(opt.nepoch):
     for i, data in enumerate(dataloader, 0):
         points, target = data
         target = target[:, 0]
-        # print(points.size())
+        # print(points.size())    #torch.Size([32, 2500, 3])
         points = points.transpose(2, 1)
+        # print(points.size())    #torch.Size([32, 3, 2500])
+        gtFeature = getGtFeature(points)
+        points = torch.zeros(gtFeature.size())
+        points = gtFeature
+        # print(points.size())    #torch.Size([32, 3, 2400])
+        # import pdb; pdb.set_trace()
         points, target = points.cuda(), target.cuda()
-        # print(points.size())
         optimizer.zero_grad()
         classifier = classifier.train()
         pred, trans, trans_feat = classifier(points)
@@ -123,6 +130,9 @@ for epoch in range(opt.nepoch):
             points, target = data
             target = target[:, 0]
             points = points.transpose(2, 1)
+            gtFeature = getGtFeature(points)
+            points = torch.zeros(gtFeature.size())
+            points = gtFeature
             points, target = points.cuda(), target.cuda()
             classifier = classifier.eval()
             pred, _, _ = classifier(points)
@@ -139,6 +149,9 @@ for i,data in tqdm(enumerate(testdataloader, 0)):
     points, target = data
     target = target[:, 0]
     points = points.transpose(2, 1)
+    gtFeature = getGtFeature(points)
+    points = torch.zeros(gtFeature.size())
+    points = gtFeature
     points, target = points.cuda(), target.cuda()
     classifier = classifier.eval()
     pred, _, _ = classifier(points)

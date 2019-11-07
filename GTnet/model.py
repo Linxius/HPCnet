@@ -10,7 +10,7 @@ from GTnet.getGtFeature import getGtFeature
 
 
 class STN3d(nn.Module):
-    def __init__(self):
+    def __init__(self, gt_feature_len):
         super(STN3d, self).__init__()
         self.conv1 = torch.nn.Conv1d(3, 64, 1)
         self.conv2 = torch.nn.Conv1d(64, 128, 1)
@@ -68,6 +68,7 @@ class STNkd(nn.Module):
 
     def forward(self, x):
         batchsize = x.size()[0]
+        # import pdb; pdb.set_trace()
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
@@ -86,10 +87,12 @@ class STNkd(nn.Module):
         return x
 
 class PointNetfeat(nn.Module):
-    def __init__(self, global_feat = True, feature_transform = False):
+    def __init__(self, global_feat = True, feature_transform = False, \
+                 gt_feature_len = 0):
         super(PointNetfeat, self).__init__()
-        self.stn = STN3d()
-        self.conv1 = torch.nn.Conv1d(3, 64, 1)
+        self.gt_feature_len = gt_feature_len
+        self.stn = STNkd(3+gt_feature_len)
+        self.conv1 = torch.nn.Conv1d(3+gt_feature_len, 64, 1)
         self.conv2 = torch.nn.Conv1d(64, 128, 1)
         self.conv3 = torch.nn.Conv1d(128, 1024, 1)
         self.bn1 = nn.BatchNorm1d(64)
@@ -102,7 +105,6 @@ class PointNetfeat(nn.Module):
 
     def forward(self, x):
         n_pts = x.size()[2]
-        # print(x.size())    torch.Size([32, 3, 2400])
         # import pdb; pdb.set_trace()
         trans = self.stn(x)#输入的点坐标经过T-net转换
         x = x.transpose(2, 1)
@@ -131,10 +133,13 @@ class PointNetfeat(nn.Module):
             return torch.cat([x, pointfeat], 1), trans, trans_feat
 
 class GtNetCls(nn.Module):#分类
-    def __init__(self, k=2, feature_transform=False):
+    def __init__(self, k=2, feature_transform=False, gt_feature_len=0):
         super(GtNetCls, self).__init__()
+        self.gt_feature_len = gt_feature_len
         self.feature_transform = feature_transform
-        self.feat = PointNetfeat(global_feat=True, feature_transform=feature_transform)
+        self.feat = PointNetfeat(global_feat=True, \
+                                 feature_transform=feature_transform, \
+                                 gt_feature_len=gt_feature_len)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, k)
