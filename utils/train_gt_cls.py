@@ -141,7 +141,7 @@ for epoch in range(opt.nepoch):
             correct = pred_choice.eq(target.data).cpu().sum()
             print('[%d: %d/%d] %s loss: %f accuracy: %f' % (epoch, i, num_batch, blue('test'), loss.item(), correct.item()/float(opt.batchSize)))
 
-    torch.save(classifier.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
+    torch.save(classifier.state_dict(), '%s/gt_cls_model_%d.pth' % (opt.outf, epoch))
 
 total_correct = 0
 total_testset = 0
