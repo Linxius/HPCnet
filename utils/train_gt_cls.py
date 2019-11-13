@@ -110,7 +110,7 @@ for epoch in range(opt.nepoch):
         gtFeature = getGtFeature(points)
         points = torch.zeros(gtFeature.size())
         points = gtFeature
-        # print(points.size())    #torch.Size([32, 3, 2400])
+        # print(points.size())    #torch.Size([32, 3, 2500])
         # import pdb; pdb.set_trace()
         points, target = points.cuda(), target.cuda()
         optimizer.zero_grad()
