@@ -18,6 +18,7 @@ def getGtFeature(points, radius=0.2):
     feature = torch.zeros(batch_size, gt_feature_len, point_num,requires_grad=False)
 
     r2 = radius**2
+    #NOTE asdfa
     #DONE get neighbour points
     #DONE get template response
     for i in range(batch_size):
