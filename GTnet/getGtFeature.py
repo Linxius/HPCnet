@@ -7,8 +7,7 @@ import time
 gt_feature_len = 9 #gt_feature_len <= 61
 
 #TODO make it run faster
-def getGtFeature(points, radius=0.2):
-    #temp_len = geo_template
+def getGtFeature(points, radius=0.1):
     # points: torch.Size([32, 3, 2500])
     temp_len = 16
     batch_size = points.size()[0]
@@ -17,8 +16,6 @@ def getGtFeature(points, radius=0.2):
 
     feature = torch.zeros(batch_size, gt_feature_len, point_num,requires_grad=False)
 
-    r2 = radius**2
-    #NOTE asdfa
     #DONE get neighbour points
     #DONE get template response
     for i in range(batch_size):
@@ -33,8 +30,7 @@ def getGtFeature(points, radius=0.2):
             points_within_radius = tree.search_nn_dist(point, radius)
             pwr_len = len(points_within_radius)
             thread_step = int(pwr_len / 11)
-            # print(len(points_within_radius))
-            # import pdb; pdb.set_trace()
+            # print(pwr_len)
 
             threads_pool = [
                 Thread(target=compute_wrapper, args=( 1,thread_step, points_within_radius, i, j, feature)),
@@ -56,12 +52,12 @@ def getGtFeature(points, radius=0.2):
                 thread.join()
 
             for k in range(gt_feature_len):
-                # print("i:%d k:%d j:%d" % (i, k, j))
-                feature[i, k-1, j] /= (len(points_within_radius))
+                feature[i, k-1, j] /= pwr_len
             # end = time.time()
             # print("for j time: %s seconds"%(end - start))
     return torch.cat([points, feature], 1 )
 
+#TODO 修改为局部坐标
 def compute_feature(points_within_radius, i, k, j, feature):
     point = points_within_radius[k]
     x = point[0]
