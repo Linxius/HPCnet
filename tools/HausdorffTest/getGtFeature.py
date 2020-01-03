@@ -43,23 +43,29 @@ gt_feature_len = len(vShapedicts)
 
 theads_num = 8
 def getGtFeature(points):
+    # print(points)
+    # print(type(points))
+    # import pdb; pdb.set_trace()
     batch_size = points.size()[0]
     point_dim = points.size()[1]
     point_num = points.size()[2]
+    print(batch_size, point_dim, point_num)
     feature = torch.zeros(batch_size, len(vKeyshapes), point_num,requires_grad=False)
 
     pool = multiprocessing.Pool(theads_num)
 
     for batch_index in range(theads_num):
-        pool.apply_async(thread_compute, (points, batch_index, feature))
+        pool.apply_async(thread_compute, (points, batch_index, feature, batch_size, theads_num))
 
     pool.close()
     pool.join()
 
-    return torch.cat([points, feature], 1 )
+    # return torch.cat([points, feature], 1 )
+    return feature
 
-def thread_compute(points, batch_index, feature):
-    for k in range(batch_size/theads_num)+batch_index:
+def thread_compute(points, batch_index, feature, batch_size, theads_num):
+    for k in range(int(batch_size/theads_num)):
+        k = k + batch_index
         clouds = points[k,:,:].transpose(0,1).numpy().tolist()
 
         #build a kd-tree
@@ -68,7 +74,6 @@ def thread_compute(points, batch_index, feature):
         #compute each key points neighboring shape
 
         for i in range(len(keyclouds)):
-
             neighidxs = srctree.query_ball_point(keyclouds[i],radius)
 
             points_neighbor = HausdorffOp.RelativeCor(clouds, neighidxs, keyclouds[i])
