@@ -13,6 +13,7 @@ seg/
 
 *~
 #.swp
+*.swp
 \#*\#
 .\#*
 # Ignore tags created by etags, ctags, gtags (GNU global) and cscope
