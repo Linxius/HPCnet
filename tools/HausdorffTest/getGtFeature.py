@@ -27,7 +27,7 @@ def Outputrestxt(filename,res):
 
 gt_feature_len = 42
 theads_num = 8
-def getGtFeature(points, radius):
+def getGtFeature(points, keyclouds, radius):
     # radius = 0.1
     #HausdorffOp is Hausdorff Operation (class object)
     HausdorffOp = Haus.Hausdorff(radius,radius/15.0)
@@ -38,30 +38,35 @@ def getGtFeature(points, radius):
     vKeyshapes, vShapedicts = LoadGivenShapes(root)
     gt_feature_len = len(vShapedicts)
 
-    batch_size = points.size()[0]
-    point_dim = points.size()[1]
-    point_num = points.size()[2]
+    batch_size = keyclouds.size()[0]
+    point_dim = keyclouds.size()[1]
+    point_num = keyclouds.size()[2]
     feature = torch.zeros(batch_size, len(vKeyshapes), point_num,requires_grad=False)
 
     pool = multiprocessing.Pool(theads_num)
 
     for batch_index in range(theads_num):
-        pool.apply_async(thread_compute, (points, batch_index, feature, batch_size, theads_num))
+        pool.apply_async(thread_compute, (points, keyclouds, batch_index, radius, feature, \
+                                          batch_size, theads_num, HausdorffOp, vKeyshapes, vShapedicts))
 
     pool.close()
     pool.join()
 
     # return torch.cat([points, feature], 1 )
+    # print(feature)
+    # import pdb; pdb.set_trace()
     return feature
 
-def thread_compute(points, batch_index, feature, batch_size, theads_num):
+def thread_compute(points, keyclouds, batch_index, radius, feature, \
+                   batch_size, theads_num, HausdorffOp, vKeyshapes, vShapedicts):
     for k in range(int(batch_size/theads_num)):
         k = k + batch_index
         clouds = points[k,:,:].transpose(0,1).numpy().tolist()
+        keyclouds = keyclouds[k,:,:].transpose(0,1).numpy().tolist()
 
         #build a kd-tree
         srctree = spatial.KDTree(data = clouds)
-        keyclouds = clouds
+        # keyclouds = clouds
         #compute each key points neighboring shape
 
         for i in range(len(keyclouds)):
@@ -70,6 +75,7 @@ def thread_compute(points, batch_index, feature, batch_size, theads_num):
             points_neighbor = HausdorffOp.RelativeCor(clouds, neighidxs, keyclouds[i])
             #build a kdtree for neighboring point clouds
             #it will be used in computing Hausdorff distance from template to source
+            # import pdb; pdb.set_trace()
             neighbortree = spatial.KDTree(points_neighbor)
 
             # vResCheck = []
