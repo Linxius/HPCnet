@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from . import pointnet2_utils
 from . import pytorch_utils as pt_utils
 from typing import List
+from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
 
 
 class _PointnetSAModuleBase(nn.Module):
@@ -15,6 +16,7 @@ class _PointnetSAModuleBase(nn.Module):
         self.groupers = None
         self.mlps = None
         self.pool_method = 'max_pool'
+        self.new_xyz = None
 
     def forward(self, xyz: torch.Tensor, features: torch.Tensor = None, new_xyz=None) -> (torch.Tensor, torch.Tensor):
         """
@@ -36,24 +38,68 @@ class _PointnetSAModuleBase(nn.Module):
 
         for i in range(len(self.groupers)):
             new_features = self.groupers[i](xyz, new_xyz, features)  # (B, C, npoint, nsample)
+            # print("new_features")
+            # print(new_features.size()) # 8 45 4096
 
+            # print(self.mlps[i]) # 64 3 1
             new_features = self.mlps[i](new_features)  # (B, mlp[-1], npoint, nsample)
-            if self.pool_method == 'max_pool':
-                new_features = F.max_pool2d(
-                    new_features, kernel_size=[1, new_features.size(3)]
-                )  # (B, mlp[-1], npoint, 1)
-            elif self.pool_method == 'avg_pool':
-                new_features = F.avg_pool2d(
-                    new_features, kernel_size=[1, new_features.size(3)]
-                )  # (B, mlp[-1], npoint, 1)
-            else:
-                raise NotImplementedError
+            # print(new_features.size())
+            # if self.pool_method == 'max_pool':
+            #     new_features = F.max_pool2d(
+            #         new_features, kernel_size=[1, new_features.size(3)]
+            #     )  # (B, mlp[-1], npoint, 1)
+            # elif self.pool_method == 'avg_pool':
+            #     new_features = F.avg_pool2d(
+            #         new_features, kernel_size=[1, new_features.size(3)]
+            #     )  # (B, mlp[-1], npoint, 1)
+            # else:
+            #     raise NotImplementedError
 
+            # new_features = F.max_pool1d( new_features, pool_size = 2)
+            # x = torch.max(x, 2, keepdim=True)[0]
             new_features = new_features.squeeze(-1)  # (B, mlp[-1], npoint)
             new_features_list.append(new_features)
+            # print(new_features.size())
+            # import pdb; pdb.set_trace()
 
         return new_xyz, torch.cat(new_features_list, dim=1)
 
+class HPC_SAModuleMSG(_PointnetSAModuleBase):
+    """Pointnet set abstraction layer with multiscale grouping"""
+
+    def __init__(self, *, npoint: int, radii: List[float], nsamples: List[int], mlps: List[List[int]], bn: bool = True,
+                 use_xyz: bool = True, pool_method='max_pool', instance_norm=False):
+        """
+        :param npoint: int
+        :param radii: list of float, list of radii to group with
+        :param nsamples: list of int, number of samples in each ball query
+        :param mlps: list of list of int, spec of the pointnet before the global pooling for each scale
+        :param bn: whether to use batchnorm
+        :param use_xyz:
+        :param pool_method: max_pool / avg_pool
+        :param instance_norm: whether to use instance_norm
+        """
+        super().__init__()
+
+        assert len(radii) == len(nsamples) == len(mlps)
+
+        self.npoint = npoint
+        self.groupers = nn.ModuleList()
+        self.mlps = nn.ModuleList()
+        for i in range(len(radii)):
+            radius = radii[i]
+            nsample = nsamples[i]
+            self.groupers.append(
+                pointnet2_utils.HPC_Group(radius, nsample, use_xyz=use_xyz)
+                if npoint is not None else pointnet2_utils.GroupAll(use_xyz)
+            )
+            mlp_spec = mlps[i]
+            if use_xyz:
+                # mlp_spec[0] += 3
+                mlp_spec[0] += 45
+
+            self.mlps.append(pt_utils.SharedMLP(mlp_spec, bn=bn, instance_norm=instance_norm))
+        self.pool_method = pool_method
 
 class PointnetSAModuleMSG(_PointnetSAModuleBase):
     """Pointnet set abstraction layer with multiscale grouping"""
@@ -81,7 +127,8 @@ class PointnetSAModuleMSG(_PointnetSAModuleBase):
             radius = radii[i]
             nsample = nsamples[i]
             self.groupers.append(
-                pointnet2_utils.QueryAndGroup(radius, nsample, use_xyz=use_xyz)
+                # pointnet2_utils.QueryAndGroup(radius, nsample, use_xyz=use_xyz)
+                pointnet2_utils.HPC_Group(radius, nsample, use_xyz=use_xyz)
                 if npoint is not None else pointnet2_utils.GroupAll(use_xyz)
             )
             mlp_spec = mlps[i]
@@ -151,7 +198,8 @@ class PointnetFPModule(nn.Module):
             new_features = interpolated_feats
 
         new_features = new_features.unsqueeze(-1)
-        new_features = self.mlp(new_features)
+        # new_features = self.mlp(new_features)
+        new_features = self.mlp(new_features[:,:,:,0])
 
         return new_features.squeeze(-1)
 

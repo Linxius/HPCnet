@@ -25,31 +25,22 @@ def Outputrestxt(filename,res):
             line = line.replace("'",'').replace(',','')+' '
             f.writelines(line)
 
-radius = 0.1
-#HausdorffOp is Hausdorff Operation (class object)
-HausdorffOp = Haus.Hausdorff(radius,radius/15.0)
-
-root = "./HausdorffTest/shapes"
-# vKeyshapes, vShapedicts = ReadShapes.LoadGivenShapes(root)
-vKeyshapes, vShapedicts = LoadGivenShapes(root)
-gt_feature_len = len(vShapedicts)
-
-# clouds = ReadShapes.read_keyfile("./HausdorffTest/bag.txt")
-# clouds = read_keyfile("./HausdorffTest/bag.txt")
-# print(type(clouds))
-# print(len(clouds[0]))
-# import pdb; pdb.set_trace()
-# keyclouds = ReadShapes.read_keyfile("./bag_keypoints.txt")
-
+gt_feature_len = 42
 theads_num = 8
-def getGtFeature(points):
-    # print(points)
-    # print(type(points))
+def getGtFeature(points, radius):
+    # radius = 0.1
+    #HausdorffOp is Hausdorff Operation (class object)
+    HausdorffOp = Haus.Hausdorff(radius,radius/15.0)
+    root = "./HausdorffTest/shapescales/" + str(radius)
+    # print(root)
     # import pdb; pdb.set_trace()
+    # vKeyshapes, vShapedicts = ReadShapes.LoadGivenShapes(root)
+    vKeyshapes, vShapedicts = LoadGivenShapes(root)
+    gt_feature_len = len(vShapedicts)
+
     batch_size = points.size()[0]
     point_dim = points.size()[1]
     point_num = points.size()[2]
-    print(batch_size, point_dim, point_num)
     feature = torch.zeros(batch_size, len(vKeyshapes), point_num,requires_grad=False)
 
     pool = multiprocessing.Pool(theads_num)
