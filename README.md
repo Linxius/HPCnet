@@ -1,7 +1,7 @@
-# Pointnet2.PyTorch
+# HPCnet
 
-* PyTorch implementation of [PointNet++](https://arxiv.org/abs/1706.02413) based on [erikwijmans/Pointnet2_PyTorch](https://github.com/erikwijmans/Pointnet2_PyTorch).
-* Faster than the original codes by re-implementing the CUDA operations. 
+<!-- * PyTorch implementation of [PointNet++](https://arxiv.org/abs/1706.02413) based on [erikwijmans/Pointnet2_PyTorch](https://github.com/erikwijmans/Pointnet2_PyTorch). -->
+<!-- * Faster than the original codes by re-implementing the CUDA operations.  -->
 
 ## Installation
 ### Requirements
@@ -9,7 +9,7 @@
 * Python 3.6+
 * PyTorch 1.0
 
-### Install 
+### Install
 Install this library by running the following command:
 
 ```shell
@@ -38,14 +38,16 @@ Pointnet2.PyTorch
 2. Run the following command to train and evaluate:
 ```shell
 cd tools
-python train_and_eval.py --batch_size 8 --epochs 100 --ckpt_save_interval 2 
+python train_and_eval.py --batch_size 8 --epochs 100 --ckpt_save_interval 2
+python hpc_train.py --batch_size 8 --epochs 25 --ckpt_save_interval 1 --mode train
 ```
 
 
 
-## Project using this repo:
-* [PointRCNN](https://github.com/sshaoshuai/PointRCNN): 3D object detector from raw point cloud.
+<!-- ## Project using this repo: -->
+<!-- * [PointRCNN](https://github.com/sshaoshuai/PointRCNN): 3D object detector from raw point cloud. -->
 
 ## Acknowledgement
 * [charlesq34/pointnet2](https://github.com/charlesq34/pointnet2): Paper author and official code repo.
-* [erikwijmans/Pointnet2_PyTorch](https://github.com/erikwijmans/Pointnet2_PyTorch): Initial work of PyTorch implementation of PointNet++. 
+* [erikwijmans/Pointnet2_PyTorch](https://github.com/erikwijmans/Pointnet2_PyTorch): Initial work of PyTorch implementation of PointNet++.
+* [sshaoshuai/Pointnet2.PyTorch](https://github.com/sshaoshuai/Pointnet2.PyTorch)
