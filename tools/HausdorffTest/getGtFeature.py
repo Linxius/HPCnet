@@ -59,8 +59,9 @@ def getGtFeature(points, keyclouds, radius):
 
 def thread_compute(points, keyclouds, batch_index, radius, feature, \
                    batch_size, theads_num, HausdorffOp, vKeyshapes, vShapedicts):
-    for k in range(int(batch_size/theads_num)):
-        k = k + batch_index
+    step = int(batch_size/theads_num)
+    for k in range(step):
+        k = k + batch_index * step
         clouds = points[k,:,:].transpose(0,1).numpy().tolist()
         keyclouds = keyclouds[k,:,:].transpose(0,1).numpy().tolist()
 
