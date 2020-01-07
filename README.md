@@ -48,6 +48,6 @@ python hpc_train.py --batch_size 8 --epochs 25 --ckpt_save_interval 1 --mode tra
 <!-- * [PointRCNN](https://github.com/sshaoshuai/PointRCNN): 3D object detector from raw point cloud. -->
 
 ## Acknowledgement
-* [charlesq34/pointnet2](https://github.com/charlesq34/pointnet2): Paper author and official code repo.
+* [charlesq34/pointnet2](https://github.com/charlesq34/pointnet2)
 * [erikwijmans/Pointnet2_PyTorch](https://github.com/erikwijmans/Pointnet2_PyTorch): Initial work of PyTorch implementation of PointNet++.
 * [sshaoshuai/Pointnet2.PyTorch](https://github.com/sshaoshuai/Pointnet2.PyTorch)
