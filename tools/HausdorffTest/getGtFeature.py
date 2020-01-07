@@ -16,22 +16,30 @@ import time
 import os
 import HausdorffTest.Hausdorff as Haus
 import multiprocessing
-
-def Outputrestxt(filename,res):
-    with open(filename,"a+") as f:
-        for row in res:
-            line = str(row).replace('[','').replace(']','')
-            #line = line.replace("'",'').replace(',','')+'\n'
-            line = line.replace("'",'').replace(',','')+' '
-            f.writelines(line)
+import sys
+sys.path.append('..')
+# from pointnet2.pointnet2_utils import BallQuery, GroupingOperation
+# ball_query = pointnet2.pointnet2_utils.BallQuery.apply
+# grouping_operation = GroupingOperation.apply
+from pointnet2.pointnet2_utils import grouping_operation, ball_query
 
 gt_feature_len = 42
-theads_num = 8
-def getGtFeature(points, keyclouds, radius):
+# theads_num = 8
+theads_num = 1
+
+
+"""
+        idx = ball_query(self.radius, self.nsample, xyz, new_xyz)
+        xyz_trans = xyz.transpose(1, 2).contiguous()
+        grouped_xyz = grouping_operation(xyz_trans, idx)  # (B, 3, npoint, nsample)
+        grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
+"""
+
+def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
     # radius = 0.1
     #HausdorffOp is Hausdorff Operation (class object)
     HausdorffOp = Haus.Hausdorff(radius,radius/15.0)
-    root = "./HausdorffTest/shapescales/" + str(radius)
+    root = "./HausdorffTest/shapes/" + str(radius)
     # print(root)
     # import pdb; pdb.set_trace()
     # vKeyshapes, vShapedicts = ReadShapes.LoadGivenShapes(root)
@@ -43,10 +51,16 @@ def getGtFeature(points, keyclouds, radius):
     point_num = keyclouds.size()[2]
     feature = torch.zeros(batch_size, len(vKeyshapes), point_num,requires_grad=False)
 
+    # print(keyclouds.size()) # B C N
+    # print(points.size()) # B C N
+    # print(grouped_xyz.size()) # B C N Nsample
+    # import pdb; pdb.set_trace()
+
     pool = multiprocessing.Pool(theads_num)
 
     for batch_index in range(theads_num):
-        pool.apply_async(thread_compute, (points, keyclouds, batch_index, radius, feature, \
+        pool.apply_async(thread_compute, (points, keyclouds, grouped_xyz, batch_index, radius, feature, \
+        # pool.apply_async(thread_compute, (points, batch_index, radius, feature, \
                                           batch_size, theads_num, HausdorffOp, vKeyshapes, vShapedicts))
 
     pool.close()
@@ -57,27 +71,31 @@ def getGtFeature(points, keyclouds, radius):
     # import pdb; pdb.set_trace()
     return feature
 
-def thread_compute(points, keyclouds, batch_index, radius, feature, \
+def thread_compute(points, keyclouds, grouped_xyz, batch_index, radius, feature, \
+# def thread_compute(points, batch_index, radius, feature, \
                    batch_size, theads_num, HausdorffOp, vKeyshapes, vShapedicts):
     step = int(batch_size/theads_num)
     for k in range(step):
         k = k + batch_index * step
-        clouds = points[k,:,:].transpose(0,1).numpy().tolist()
-        keyclouds = keyclouds[k,:,:].transpose(0,1).numpy().tolist()
+        # clouds = points[k,:,:].transpose(0,1).numpy().tolist()
+        # keyclouds = keyclouds[k,:,:].transpose(0,1).numpy().tolist()
 
         #build a kd-tree
-        srctree = spatial.KDTree(data = clouds)
+        # srctree = spatial.KDTree(data = clouds)
         # keyclouds = clouds
         #compute each key points neighboring shape
 
         for i in range(len(keyclouds)):
-            neighidxs = srctree.query_ball_point(keyclouds[i],radius)
+            # neighidxs = srctree.query_ball_point(keyclouds[i],radius)
 
-            points_neighbor = HausdorffOp.RelativeCor(clouds, neighidxs, keyclouds[i])
+            # points_neighbor = HausdorffOp.RelativeCor(clouds, neighidxs, keyclouds[i])
+            points_neighbor = grouped_xyz[k, :, i, :].transpose(0,1).numpy().tolist()
+
             #build a kdtree for neighboring point clouds
             #it will be used in computing Hausdorff distance from template to source
-            # import pdb; pdb.set_trace()
             neighbortree = spatial.KDTree(points_neighbor)
+            # print(type(neighbortree))
+            # import pdb; pdb.set_trace()
 
             # vResCheck = []
 
@@ -93,3 +111,4 @@ def thread_compute(points, keyclouds, batch_index, radius, feature, \
 
                 # vResCheck.append(fGenHdis)
                 feature[k, j, i] = fGenHdis
+                # import pdb; pdb.set_trace()

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from . import pointnet2_utils
+from . import hpc_pointnet2_utils
 from . import pytorch_utils as pt_utils
 from typing import List
 from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
@@ -31,9 +31,9 @@ class _PointnetSAModuleBase(nn.Module):
 
         xyz_flipped = xyz.transpose(1, 2).contiguous()
         if new_xyz is None:
-            new_xyz = pointnet2_utils.gather_operation(
+            new_xyz = hpc_pointnet2_utils.gather_operation(
                 xyz_flipped,
-                pointnet2_utils.furthest_point_sample(xyz, self.npoint)
+                hpc_pointnet2_utils.furthest_point_sample(xyz, self.npoint)
             ).transpose(1, 2).contiguous() if self.npoint is not None else None
 
         for i in range(len(self.groupers)):
@@ -90,8 +90,8 @@ class HPC_SAModuleMSG(_PointnetSAModuleBase):
             radius = radii[i]
             nsample = nsamples[i]
             self.groupers.append(
-                pointnet2_utils.HPC_Group(radius, nsample, use_xyz=use_xyz)
-                if npoint is not None else pointnet2_utils.GroupAll(use_xyz)
+                hpc_pointnet2_utils.HPC_Group(radius, nsample, use_xyz=use_xyz)
+                if npoint is not None else hpc_pointnet2_utils.GroupAll(use_xyz)
             )
             mlp_spec = mlps[i]
             if use_xyz:
@@ -128,8 +128,8 @@ class PointnetSAModuleMSG(_PointnetSAModuleBase):
             nsample = nsamples[i]
             self.groupers.append(
                 # pointnet2_utils.QueryAndGroup(radius, nsample, use_xyz=use_xyz)
-                pointnet2_utils.HPC_Group(radius, nsample, use_xyz=use_xyz)
-                if npoint is not None else pointnet2_utils.GroupAll(use_xyz)
+                hpc_pointnet2_utils.HPC_Group(radius, nsample, use_xyz=use_xyz)
+                if npoint is not None else hpc_pointnet2_utils.GroupAll(use_xyz)
             )
             mlp_spec = mlps[i]
             if use_xyz:
@@ -183,12 +183,12 @@ class PointnetFPModule(nn.Module):
             new_features: (B, mlp[-1], n) tensor of the features of the unknown features
         """
         if known is not None:
-            dist, idx = pointnet2_utils.three_nn(unknown, known)
+            dist, idx = hpc_pointnet2_utils.three_nn(unknown, known)
             dist_recip = 1.0 / (dist + 1e-8)
             norm = torch.sum(dist_recip, dim=2, keepdim=True)
             weight = dist_recip / norm
 
-            interpolated_feats = pointnet2_utils.three_interpolate(known_feats, idx, weight)
+            interpolated_feats = hpc_pointnet2_utils.three_interpolate(known_feats, idx, weight)
         else:
             interpolated_feats = known_feats.expand(*known_feats.size()[0:2], unknown.size(1))
 

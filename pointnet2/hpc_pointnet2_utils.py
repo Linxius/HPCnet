@@ -6,6 +6,8 @@ from typing import Tuple
 
 import pointnet2_cuda as pointnet2
 
+from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
+
 class FurthestPointSampling(Function):
     @staticmethod
     def forward(ctx, xyz: torch.Tensor, npoint: int) -> torch.Tensor:
@@ -225,6 +227,72 @@ class BallQuery(Function):
 
 
 ball_query = BallQuery.apply
+
+class HPC_Group(nn.Module):
+    def __init__(self, radius: float, nsample: int, use_xyz: bool = True):
+        """
+        :param radius: float, radius of ball
+        :param nsample: int, maximum number of features to gather in the ball
+        :param use_xyz:
+        """
+        super().__init__()
+        self.radius, self.nsample, self.use_xyz = radius, nsample, use_xyz
+
+    def forward(self, xyz: torch.Tensor, new_xyz: torch.Tensor, features: torch.Tensor = None) -> Tuple[torch.Tensor]:
+        """
+        :param xyz: (B, N, 3) xyz coordinates of the features
+        :param new_xyz: (B, npoint, 3) centroids
+        :param features: (B, C, N) descriptors of the features
+        :return:
+            new_features: (B, 3 + C, npoint, nsample)
+
+            points = xyz.transpose(2, 1).cpu()
+            # print(type(features))
+            # print(xyz)
+            # print(xyz.size())
+            # print(type(xyz))
+            gtFeature = getGtFeature(points)
+            print(gtFeature)
+            features = gtFeature.cuda()
+
+        """
+        idx = ball_query(self.radius, self.nsample, xyz, new_xyz)
+        # print(idx.size())
+        xyz_trans = xyz.transpose(1, 2).contiguous()
+        grouped_xyz = grouping_operation(xyz_trans, idx)  # (B, 3, npoint, nsample)
+        # print(grouped_xyz.size())
+        grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
+        # print(grouped_xyz.size())
+
+        # print("grouped_xyz")
+        # print(grouped_xyz.size()) #torch.Size([8, 3, 4096, 16])
+
+        points = xyz.transpose(1,2).cpu()
+        keypoints = new_xyz.transpose(1, 2).cpu()
+        # batch_size point_dim point_num
+        gtfeatures = getGtFeature(points, keypoints, grouped_xyz.cpu(), self.nsample, self.radius).cuda() #torch.Size([8, 42, 4096])
+        # print("gtfeatures")
+        # print(gtfeatures.size())
+
+        if features is not None:
+            grouped_features = grouping_operation(features, idx)
+            # print("grouped_features")
+            # print(grouped_features.size())
+            # import pdb; pdb.set_trace()
+            if self.use_xyz:
+                new_features = torch.cat([grouped_xyz[:,:,:,0], gtfeatures, grouped_features[:,:,:,0]], dim=1)  # (B, C + 3, npoint, nsample)
+            else:
+                # new_features = grouped_features
+                new_features = torch.cat([gtfeatures, grouped_features], dim=1)  # (B, C + 3, npoint, nsample)
+        else:
+            assert self.use_xyz, "Cannot have not features and not use xyz as a feature!"
+            # new_features = grouped_xyz
+            new_features = torch.cat([grouped_xyz[:,:,:,0], gtfeatures], dim=1)  # (B, C + 3, npoint, nsample)
+        # print("new_features")
+        # print(new_features.size()) #torch.Size([8, 45, 4096])
+        # new_features = torch.cat([new_features, gtfeatures], dim = 1)
+
+        return new_features
 
 class QueryAndGroup(nn.Module):
     def __init__(self, radius: float, nsample: int, use_xyz: bool = True):
