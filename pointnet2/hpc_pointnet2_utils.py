@@ -271,8 +271,7 @@ class HPC_Group(nn.Module):
         keypoints = new_xyz.transpose(1, 2).cpu()
         # batch_size point_dim point_num
         gtfeatures = getGtFeature(points, keypoints, grouped_xyz.cpu(), self.nsample, self.radius).cuda() #torch.Size([8, 42, 4096])
-        # print("gtfeatures")
-        # print(gtfeatures.size())
+        # print(gtfeatures.size()) # 8 42 4096
 
         if features is not None:
             grouped_features = grouping_operation(features, idx)
