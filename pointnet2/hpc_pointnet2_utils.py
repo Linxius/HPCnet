@@ -228,6 +228,7 @@ class BallQuery(Function):
 
 ball_query = BallQuery.apply
 
+
 class HPC_Group(nn.Module):
     def __init__(self, radius: float, nsample: int, use_xyz: bool = True):
         """
@@ -245,39 +246,25 @@ class HPC_Group(nn.Module):
         :param features: (B, C, N) descriptors of the features
         :return:
             new_features: (B, 3 + C, npoint, nsample)
-
-            points = xyz.transpose(2, 1).cpu()
-            # print(type(features))
-            # print(xyz)
-            # print(xyz.size())
-            # print(type(xyz))
-            gtFeature = getGtFeature(points)
-            print(gtFeature)
-            features = gtFeature.cuda()
-
         """
+
         idx = ball_query(self.radius, self.nsample, xyz, new_xyz)
-        # print(idx.size())
         xyz_trans = xyz.transpose(1, 2).contiguous()
         grouped_xyz = grouping_operation(xyz_trans, idx)  # (B, 3, npoint, nsample)
-        # print(grouped_xyz.size())
         grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
-        # print(grouped_xyz.size())
-
-        # print("grouped_xyz")
-        # print(grouped_xyz.size()) #torch.Size([8, 3, 4096, 16])
+        _new_xyz = new_xyz.permute(2, 1, 0) # 3 4096 8
+        _grouped_xyz = grouped_xyz.permute(3, 1, 2, 0) #16 3 4096 8
+        _grouped_xyz = (_grouped_xyz - _new_xyz).permute(3, 1, 2, 0)
 
         points = xyz.transpose(1,2).cpu()
         keypoints = new_xyz.transpose(1, 2).cpu()
         # batch_size point_dim point_num
-        gtfeatures = getGtFeature(points, keypoints, grouped_xyz.cpu(), self.nsample, self.radius).cuda() #torch.Size([8, 42, 4096])
+        gtfeatures = getGtFeature(points, keypoints, _grouped_xyz.cpu(), self.nsample, self.radius).cuda() #torch.Size([8, 42, 4096])
         # print(gtfeatures.size()) # 8 42 4096
+        # import pdb; pdb.set_trace()
 
         if features is not None:
             grouped_features = grouping_operation(features, idx)
-            # print("grouped_features")
-            # print(grouped_features.size())
-            # import pdb; pdb.set_trace()
             if self.use_xyz:
                 new_features = torch.cat([grouped_xyz[:,:,:,0], gtfeatures, grouped_features[:,:,:,0]], dim=1)  # (B, C + 3, npoint, nsample)
             else:

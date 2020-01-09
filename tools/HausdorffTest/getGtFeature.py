@@ -16,24 +16,12 @@ import time
 import os
 import HausdorffTest.Hausdorff as Haus
 import multiprocessing
-import sys
-sys.path.append('..')
-# from pointnet2.pointnet2_utils import BallQuery, GroupingOperation
-# ball_query = pointnet2.pointnet2_utils.BallQuery.apply
-# grouping_operation = GroupingOperation.apply
-from pointnet2.pointnet2_utils import grouping_operation, ball_query
+# import sys
+# sys.path.append('..')
+# from pointnet2.pointnet2_utils import grouping_operation, ball_query
 
 gt_feature_len = 42
-# theads_num = 8
 theads_num = 8
-
-
-"""
-        idx = ball_query(self.radius, self.nsample, xyz, new_xyz)
-        xyz_trans = xyz.transpose(1, 2).contiguous()
-        grouped_xyz = grouping_operation(xyz_trans, idx)  # (B, 3, npoint, nsample)
-        grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
-"""
 
 def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
     # radius = 0.1
@@ -67,9 +55,7 @@ def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
     pool.join()
 
     # return torch.cat([points, feature], 1 )
-    print(feature[0,:,10])
-    print(feature.size())
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     return feature
 
 def thread_compute(points, keyclouds, grouped_xyz, batch_index, radius, feature, \
@@ -78,29 +64,9 @@ def thread_compute(points, keyclouds, grouped_xyz, batch_index, radius, feature,
     step = int(batch_size/theads_num)
     for k in range(step):
         k = k + batch_index * step
-        # clouds = points[k,:,:].transpose(0,1).numpy().tolist()
-        # keyclouds = keyclouds[k,:,:].transpose(0,1).numpy().tolist()
-
-        #build a kd-tree
-        # srctree = spatial.KDTree(data = clouds)
-        # keyclouds = clouds
-        #compute each key points neighboring shape
-
-        # for i in range(len(keyclouds)):
         for i in range(point_num):
-            # neighidxs = srctree.query_ball_point(keyclouds[i],radius)
-
-            # points_neighbor = HausdorffOp.RelativeCor(clouds, neighidxs, keyclouds[i])
             points_neighbor = grouped_xyz[k, :, i, :].transpose(0,1).numpy().tolist()
-
-            #build a kdtree for neighboring point clouds
-            #it will be used in computing Hausdorff distance from template to source
             neighbortree = spatial.KDTree(points_neighbor)
-            # print(type(neighbortree))
-            # import pdb; pdb.set_trace()
-
-            # vResCheck = []
-
             for j in range( gt_feature_len ):
                 #compute Hausdorff distance from source to template
                 fToTempDis = HausdorffOp.HausdorffDict(vCloud = points_neighbor, vDisDict = vShapedicts[j])
@@ -112,6 +78,7 @@ def thread_compute(points, keyclouds, grouped_xyz, batch_index, radius, feature,
                 fGenHdis = HausdorffOp.GeneralHausDis(fToTempDis, fToSourceDis)
 
                 # vResCheck.append(fGenHdis)
-                feature[k, j, i] = fGenHdis
-                # print(fGenHdis)
+                feature[k, j, i] = 1 - fGenHdis
+                # feature[k, j, i] = fGenHdis
+                # print(1 - fGenHdis)
                 # import pdb; pdb.set_trace()
