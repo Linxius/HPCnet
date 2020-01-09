@@ -6,7 +6,7 @@ from HausdorffTest.ReadShapes import LoadGivenShapes
 import time
 import os
 import sys
-import HausdorffTest.Hausdorff as Haus
+# import HausdorffTest.Hausdorff as Haus
 # import sys
 # sys.path.append('..')
 # from pointnet2.pointnet2_utils import grouping_operation, ball_query
