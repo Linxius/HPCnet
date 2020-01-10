@@ -11,7 +11,6 @@ import tensorboard_logger as tb_log
 from dataset import KittiDataset
 import argparse
 import importlib
-from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
 
 parser = argparse.ArgumentParser(description="Arg parser")
 parser.add_argument("--batch_size", type=int, default=8)
@@ -69,20 +68,9 @@ def train_one_epoch(model, train_loader, optimizer, epoch, lr_scheduler, total_i
         optimizer.zero_grad()
 
         pts_input, cls_labels = batch['pts_input'], batch['cls_labels']
-        # points = torch.from_numpy(pts_input)
-        # points = points.transpose(2, 1)
-        # # print(points.size())
-        # gtFeature = getGtFeature(points)
-        # pts_input = torch.zeros(gtFeature.size())
-        # pts_input = pts_input.transpose(2, 1)
-        # print(pts_input.size())
-        # print(pts_input)
-        # import pdb; pdb.set_trace()
-        # pts_input = pts_input.cuda(non_blocking=True).float()
         pts_input = torch.from_numpy(pts_input).cuda(non_blocking=True).float()
         cls_labels = torch.from_numpy(cls_labels).cuda(non_blocking=True).long().view(-1)
 
-        # import pdb; pdb.set_trace()
         pred_cls = model(pts_input)
         pred_cls = pred_cls.view(-1)
 
@@ -194,7 +182,6 @@ def train_and_eval(model, train_loader, eval_loader, tb_log, ckpt_dir, log_f):
 if __name__ == '__main__':
     MODEL = importlib.import_module(args.net)  # import network module
     model = MODEL.get_model(input_channels=0)
-    # model = MODEL.get_model(input_channels=gt_feature_len-3)
 
     eval_set = KittiDataset(root_dir='./data', mode='EVAL', split='val')
     eval_loader = DataLoader(eval_set, batch_size=args.batch_size, shuffle=False, pin_memory=True,

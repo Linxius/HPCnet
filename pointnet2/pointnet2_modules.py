@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from . import hpc_pointnet2_utils
 from . import pytorch_utils as pt_utils
 from typing import List
-from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
+# from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
 
 
 class _PointnetSAModuleBase(nn.Module):
