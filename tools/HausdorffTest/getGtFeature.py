@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Dec 10 19:43:11 2019
-
-@author: ludy
-"""
-
-import numpy as np
 import torch
 from scipy import spatial
 from threading import Thread
@@ -16,21 +7,13 @@ import time
 import os
 import HausdorffTest.Hausdorff as Haus
 import multiprocessing
-# import sys
-# sys.path.append('..')
-# from pointnet2.pointnet2_utils import grouping_operation, ball_query
 
 gt_feature_len = 42
 theads_num = 8
 
 def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
-    # radius = 0.1
-    #HausdorffOp is Hausdorff Operation (class object)
     HausdorffOp = Haus.Hausdorff(radius,radius/15.0)
     root = "./HausdorffTest/shapes/" + str(radius)
-    # print(root)
-    # import pdb; pdb.set_trace()
-    # vKeyshapes, vShapedicts = ReadShapes.LoadGivenShapes(root)
     vKeyshapes, vShapedicts = LoadGivenShapes(root)
     gt_feature_len = len(vShapedicts)
 
@@ -39,16 +22,10 @@ def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
     point_num = keyclouds.size()[2]
     feature = torch.zeros(batch_size, len(vKeyshapes), point_num,requires_grad=False)
 
-    # print(keyclouds.size()) # B C N
-    # print(points.size()) # B C N
-    # print(grouped_xyz.size()) # B C N Nsample
-    # import pdb; pdb.set_trace()
-
     pool = multiprocessing.Pool(theads_num)
 
     for batch_index in range(theads_num):
         pool.apply_async(thread_compute, (points, keyclouds, grouped_xyz, batch_index, radius, feature, \
-        # pool.apply_async(thread_compute, (points, batch_index, radius, feature, \
                                           batch_size, point_num, theads_num, HausdorffOp, vKeyshapes, vShapedicts))
 
     pool.close()
