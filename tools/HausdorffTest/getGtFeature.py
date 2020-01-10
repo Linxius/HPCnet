@@ -15,13 +15,12 @@ gt_feature_len = 42
 theads_num = 8
 
 def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
-    HausdorffOp = Haus.Hausdorff(radius,radius/15.0)
     voxel_num_1dim = 30
     voxel_len = radius / voxel_num_1dim
 
     root = "./HausdorffTest/shapes/" + str(radius)
     vKeyshapes, vShapedicts = LoadGivenShapes(root)
-    gt_feature_len = len(vShapedicts)
+    # gt_feature_len = len(vShapedicts)
 
     batch_size = keyclouds.size()[0]
     point_dim = keyclouds.size()[1]
@@ -35,8 +34,9 @@ def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
 
     for k in range(batch_size):
         clouds = points[k,:,:].transpose(0,1).numpy().tolist()
-        srctree = spatial.KDTree(data = clouds)
         keypoints = keyclouds[k,:,:].transpose(0,1).numpy().tolist()
+        srctree = spatial.KDTree(data = clouds)
+
         for i in range(point_num):
             neighidxs = srctree.query_ball_point(keypoints[i],radius)
             # points_neighbor = HausdorffOp.RelativeCor(clouds, neighidxs, keypoints[i])
@@ -45,10 +45,7 @@ def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
                 points_neighbor[it][0] = clouds[neighidxs[it]][0] - keypoints[i][0]
                 points_neighbor[it][1] = clouds[neighidxs[it]][1] - keypoints[i][1]
                 points_neighbor[it][2] = clouds[neighidxs[it]][2] - keypoints[i][2]
-            print(keypoints[i])
-            print(points_neighbor)
 
-            import pdb; pdb.set_trace()
             # points_neighbor = grouped_xyz[k, :, i, :].transpose(0,1).numpy().tolist()
             neighbortree = spatial.KDTree(points_neighbor)
 
@@ -57,18 +54,16 @@ def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
                 fToTempDis = -1.0*sys.float_info.max
                 #search the nearest contour point
                 for it in range(len(points_neighbor)):
-                    #find the voxel index of query point
                     # fOneDis = self.LocationtoDis(points_neighbor[it], vShapedicts)
-                    print("points_neighbor")
-                    print(points_neighbor[it])
                     ith = math.floor(abs(points_neighbor[it][0] + radius) / voxel_len)
                     jth = math.floor(abs(points_neighbor[it][1] + radius) / voxel_len)
                     kth = math.floor(abs(points_neighbor[it][2] + radius) / voxel_len)
+                    # TODO 下标出错临时解决
+                    ith = ith if ith < 30 else 29
+                    jth = jth if jth < 30 else 29
+                    kth = ith if kth < 30 else 29
                     # iOneIdx = self.Transfor3DTo1DIdx(ith, jth, kth, self.m_xnum, self.m_ynum)
                     iOneIdx = ith + jth * voxel_num_1dim + kth * voxel_num_1dim * voxel_num_1dim
-                    print(iOneIdx)
-                    print(len(vShapedicts[j]))
-                    # import pdb; pdb.set_trace()
                     fOneDis = vShapedicts[j][iOneIdx]
                     if fToTempDis < fOneDis:
                         fToTempDis = fOneDis
@@ -92,9 +87,9 @@ def getGtFeature(points, keyclouds, grouped_xyz, nsample, radius):
                 feature[k, j, i] = fGenHdis
                 # print(fGenHdis)
                 # import pdb; pdb.set_trace()
-            print(feature[k,:,i])
+            # print(feature[k,:,i])
 
-    # return torch.cat([points, feature], 1 )
-    # print(feature)
+    print(feature)
     import pdb; pdb.set_trace()
     return feature
+    # return torch.cat([points, feature], 1 )
