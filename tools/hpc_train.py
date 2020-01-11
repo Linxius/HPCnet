@@ -11,6 +11,7 @@ import tensorboard_logger as tb_log
 from dataset import KittiDataset
 import argparse
 import importlib
+import torch.distributed as dist
 
 parser = argparse.ArgumentParser(description="Arg parser")
 parser.add_argument("--batch_size", type=int, default=8)
@@ -35,6 +36,8 @@ args = parser.parse_args()
 
 FG_THRESH = 0.3
 
+gpus = [0, 1, 2, 3]
+torch.cuda.set_device('cuda:{}'.format(gpus[0]))
 
 def log_print(info, log_f=None):
     print(info)
@@ -182,6 +185,7 @@ def train_and_eval(model, train_loader, eval_loader, tb_log, ckpt_dir, log_f):
 if __name__ == '__main__':
     MODEL = importlib.import_module(args.net)  # import network module
     model = MODEL.get_model(input_channels=0)
+    model = nn.DataParallel(model, device_ids=gpus, output_device=gpus[0])
 
     eval_set = KittiDataset(root_dir='./data', mode='EVAL', split='val')
     eval_loader = DataLoader(eval_set, batch_size=args.batch_size, shuffle=False, pin_memory=True,
