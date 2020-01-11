@@ -262,7 +262,7 @@ class HPC_Group(nn.Module):
         points = xyz.transpose(1,2)
         keypoints = new_xyz.transpose(1, 2)
         gtfeatures = get_gt_feature(points, keypoints, grouped_xyz.permute(3,0,1,2), self.radius) #torch.Size([8, 42, 4096])
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
         if features is not None:
             grouped_features = grouping_operation(features, idx)

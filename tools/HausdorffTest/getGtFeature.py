@@ -39,7 +39,7 @@ class getGtFeature(Function):
         point_num = keyclouds.size()[2]
         feature = torch.zeros(batch_size, len(vKeyshapes), point_num,requires_grad=False)
 
-        whole_points_neighbor = (grouped_xyz - keyclouds).permute(1, 2, 3, 0)
+        whole_points_neighbor = grouped_xyz.permute(1, 2, 3, 0)
 
         r2 = radius ** 2
         for k in range(batch_size):
