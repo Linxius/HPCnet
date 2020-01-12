@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 from pointnet2.pointnet2_modules import PointnetFPModule, PointnetSAModuleMSG, HPC_SAModuleMSG
 import pointnet2.pytorch_utils as pt_utils
-from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
-
 
 def get_model(input_channels=0):
     return Pointnet2MSG(input_channels=input_channels)
@@ -18,11 +16,11 @@ def get_model(input_channels=0):
 # CLS_FC = [128]
 # DP_RATIO = 0.5
 
-NPOINTS = [4096, 512]
-RADIUS = [[0.4, 0.8], [1.2, 1.6]]
-# RADIUS = [[0.2, 0.5], [0.5, 1.0]]
+NPOINTS = [4096, 256]
+RADIUS = [[0.2, 0.4], [0.2, 0.4]]
 NSAMPLE = [[16, 32], [16, 32]]
-MLPS = [[[64, 64, 128], [64, 64, 128]], [[256 + 64, 256+64, 512], [320, 320, 512]]]
+# MLPS = [[[64, 64, 128], [64, 64, 128]], [[256 + 64, 256+64, 512], [320, 320, 512]], [[1024, 1024, 1024], [1024, 1024, 1024]]]
+MLPS = [[[64, 64, 128], [64, 64, 128]], [[256 + 64, 256+64, 512], [320, 320, 512]] ]
 # MLPS = [[[16, 16, 32], [32, 32, 64]], [[64, 64, 128], [64, 96, 128]],
 #         [[128, 196, 256], [128, 196, 256]], [[256, 256, 512], [256, 384, 512]]]
 FP_MLPS = [[256, 256], [512, 512]]

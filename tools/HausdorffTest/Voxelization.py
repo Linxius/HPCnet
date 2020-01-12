@@ -7,7 +7,7 @@ Created on Wed Dec 11 22:53:52 2019
 @email: alualu628628@163.com
 
 a class to implement fast hausdorff distance calculation
-this method is based on the situation that oneside of shape is known 
+this method is based on the situation that oneside of shape is known
 """
 import math
 
@@ -16,22 +16,22 @@ class PointXYZ:
     def __init__(self,x,y,z):
         self.x = x
         self.y = y
-        self.z = z    
+        self.z = z
 
 
 class Voxel:
 
     #construction
     def __init__(self, fSpaceR, fVoxelLength):
-        self.m_fNeighR = fSpaceR 
+        self.m_fNeighR = fSpaceR
         self.m_fVoxelLength = fVoxelLength
-    
+
     ##########end Function __init__
-    
+
     #i in xnum, j in ynum and k in znum
     def Transfor3DTo1DIdx(self, i, j, k, xnum, ynum):
         return i + j*xnum + k*xnum*ynum
-    
+
     ##########end Function Transfor3DTo1DIdx
 
     def SpaceVoxelization(self, vOutCloud):
@@ -62,9 +62,9 @@ class Voxel:
 
         #voxelization
         for k in range(len(self.m_znum)):
-            
+
             for j in range(len(self.m_ynum)):
-            
+
                 for i in range(len(self.m_xnum)):
 
                     #compute the center of each voxel
@@ -74,7 +74,7 @@ class Voxel:
                     vOutCloud[iOneIdx][2] = self.m_oMinCor.z + (float(k) + 0.5) * self.m_fVoxelLength
 
     ##########end Function Reloaded SpaceVoxelization
-    
+
     #reload without any output
     def SpaceVoxelization(self):
 
@@ -90,8 +90,8 @@ class Voxel:
         self.m_xnum = math.floor(abs(self.m_oMaxCor.x - self.m_oMinCor.x) / self.m_fVoxelLength) + 1
         self.m_ynum = math.floor(abs(self.m_oMaxCor.y - self.m_oMinCor.y) / self.m_fVoxelLength) + 1
         self.m_znum = math.floor(abs(self.m_oMaxCor.z - self.m_oMinCor.z) / self.m_fVoxelLength) + 1
-    
-    ##########end Function Reloaded SpaceVoxelization 
+
+    ##########end Function Reloaded SpaceVoxelization
 
     def LocationTo1DIdx(self, oQueryPoint):
 
@@ -100,17 +100,10 @@ class Voxel:
         kth = math.floor(abs(oQueryPoint[2] - self.m_oMinCor.z) / self.m_fVoxelLength)
 
         idx = self.Transfor3DTo1DIdx(ith, jth, kth, self.m_xnum, self.m_ynum)
-        
+
         if idx == 41591:
             print(ith, jth, kth)
             print(oQueryPoint[0],oQueryPoint[1],oQueryPoint[2])
-    
+
         return idx
     ##########end Function LocationTo1DIdx
-
-
-
-
-
-
-

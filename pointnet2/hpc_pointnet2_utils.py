@@ -6,7 +6,8 @@ from typing import Tuple
 
 import pointnet2_cuda as pointnet2
 
-from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
+# from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
+from HausdorffTest.getGtFeature import get_gt_feature
 
 class FurthestPointSampling(Function):
     @staticmethod
@@ -251,23 +252,11 @@ class HPC_Group(nn.Module):
         idx = ball_query(self.radius, self.nsample, xyz, new_xyz)
         xyz_trans = xyz.transpose(1, 2).contiguous()
         grouped_xyz = grouping_operation(xyz_trans, idx)  # (B, 3, npoint, nsample)
-        grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1) #
+        grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
 
-        # print(self.radius)
-        # print(grouped_xyz[0,0,:,:])
-        # _new_xyz = new_xyz.permute(2, 1, 0) # 3 4096 8
-        # _grouped_xyz = grouped_xyz.permute(3, 1, 2, 0) #16 3 4096 8
-        # _grouped_xyz = (_grouped_xyz - _new_xyz).permute(3, 1, 2, 0) # 8 3 4096 16
-
-        # print(_grouped_xyz[0,:,0,:])
-        # print(new_xyz[0,0,:])
-        points = xyz.transpose(1,2).cpu()
-        keypoints = new_xyz.transpose(1, 2).cpu()
-        # batch_size point_dim point_num
-        gtfeatures = getGtFeature(points, keypoints, grouped_xyz.cpu(), self.radius).cuda() #torch.Size([8, 42, 4096])
-        # gtfeatures = getGtFeature(points, keypoints, _grouped_xyz.cpu(), self.radius).cuda() #torch.Size([8, 42, 4096])
-        # print(gtfeatures.size()) # 8 42 4096
-        # import pdb; pdb.set_trace()
+        points = xyz.transpose(1,2)
+        keypoints = new_xyz.transpose(1, 2)
+        gtfeatures = get_gt_feature(points, keypoints, grouped_xyz.permute(3,0,1,2), self.radius) #torch.Size([8, 42, 4096])
 
         if features is not None:
             grouped_features = grouping_operation(features, idx)
