@@ -254,15 +254,9 @@ class HPC_Group(nn.Module):
         grouped_xyz = grouping_operation(xyz_trans, idx)  # (B, 3, npoint, nsample)
         grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
 
-        # points = xyz.transpose(1,2).cpu()
-        # keypoints = new_xyz.transpose(1, 2).cpu()
-        # # batch_size point_dim point_num
-        # gtfeatures = getGtFeature(points, keypoints, self.radius).cuda() #torch.Size([8, 42, 4096])
-        # # print(gtfeatures.size()) # 8 42 4096
         points = xyz.transpose(1,2)
         keypoints = new_xyz.transpose(1, 2)
         gtfeatures = get_gt_feature(points, keypoints, grouped_xyz.permute(3,0,1,2), self.radius) #torch.Size([8, 42, 4096])
-        # import pdb; pdb.set_trace()
 
         if features is not None:
             grouped_features = grouping_operation(features, idx)
@@ -273,11 +267,7 @@ class HPC_Group(nn.Module):
                 new_features = torch.cat([gtfeatures, grouped_features], dim=1)  # (B, C + 3, npoint, nsample)
         else:
             assert self.use_xyz, "Cannot have not features and not use xyz as a feature!"
-            # new_features = grouped_xyz
             new_features = torch.cat([grouped_xyz[:,:,:,0], gtfeatures], dim=1)  # (B, C + 3, npoint, nsample)
-        # print("new_features")
-        # print(new_features.size()) #torch.Size([8, 45, 4096])
-        # new_features = torch.cat([new_features, gtfeatures], dim = 1)
 
         return new_features
 
