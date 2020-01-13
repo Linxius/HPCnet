@@ -40,7 +40,7 @@ class getGtFeature(Function):
 
         r2 = radius ** 2
         for k in range(batch_size):
-            clouds = points[k,:,:].transpose(0,1)
+            # clouds = points[k,:,:].transpose(0,1)
             # keypoints = keyclouds[k,:,:].transpose(0,1)
 
             for i in range(point_num):
@@ -71,6 +71,7 @@ class getGtFeature(Function):
                     fGenHdis = fToTempDis if fToTempDis > fToSourceDis else fToSourceDis
                     fGenHdis = 1.0 if fGenHdis > radius else fGenHdis / radius
                     feature[k, j, i] = 1 - fGenHdis
+                print(feature[k,:,i])
 
         return feature
 
