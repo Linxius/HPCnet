@@ -39,11 +39,8 @@ class getGtFeature(Function):
         grouped_xyz = grouped_xyz.permute(1, 2, 3, 0).share_memory_()
 
         r2 = radius ** 2
-        for k in range(batch_size):
-            # clouds = points[k,:,:].transpose(0,1)
-            # keypoints = keyclouds[k,:,:].transpose(0,1)
-
-            for i in range(point_num):
+        for k in range(1):
+            for i in range(int(50)):
                 points_neighbor = grouped_xyz[k,:,i,:].transpose(0,1)
 
                 for j in range( gt_feature_len ):
@@ -52,7 +49,6 @@ class getGtFeature(Function):
                         ith = math.floor(abs(points_neighbor[it][0] + radius) / voxel_len)
                         jth = math.floor(abs(points_neighbor[it][1] + radius) / voxel_len)
                         kth = math.floor(abs(points_neighbor[it][2] + radius) / voxel_len)
-                        assert ith < 31 and jth < 31 and kth < 31
                         iOneIdx = int(ith + jth * voxel_num_1dim + kth * voxel_num_1dim * voxel_num_1dim)
                         fOneDis = vShapedicts[j][iOneIdx]
                         if fToTempDis < fOneDis:
@@ -60,18 +56,26 @@ class getGtFeature(Function):
 
                     fToSourceDis = 0
                     for it in range(len(vKeyshapes[j])):
+                        minPointPairdis = 99.9
                         for iit in range(points_neighbor.size()[0]):
                             oneneardis = ((vKeyshapes[j][it][0]-points_neighbor[iit][0])**2 + \
-                                            (vKeyshapes[j][it][0]-points_neighbor[iit][0])**2 + \
-                                            (vKeyshapes[j][it][0]-points_neighbor[iit][0])**2)
-                            if fToSourceDis < oneneardis:
-                                fToSourceDis = oneneardis
+                                            (vKeyshapes[j][it][1]-points_neighbor[iit][1])**2 + \
+                                            (vKeyshapes[j][it][2]-points_neighbor[iit][2])**2)
+                            # TODO 领域点出错
+                            if oneneardis > r2:
+                                # print("ERROR: oneneardis {} > r2 {}".format(oneneardis, r2))
+                                # print(vKeyshapes[j][it])
+                                # print(points_neighbor[iit])
+                                oneneardis=r2
+                            if minPointPairdis > oneneardis:
+                                minPointPairdis = oneneardis
+                        if fToSourceDis < minPointPairdis:
+                            fToSourceDis = minPointPairdis
                     fToSourceDis = math.sqrt(fToSourceDis)
-
                     fGenHdis = fToTempDis if fToTempDis > fToSourceDis else fToSourceDis
                     fGenHdis = 1.0 if fGenHdis > radius else fGenHdis / radius
                     feature[k, j, i] = 1 - fGenHdis
-                print(feature[k,:,i])
+                # print(feature[k,:,i])
 
         return feature
 

@@ -253,6 +253,8 @@ class HPC_Group(nn.Module):
         xyz_trans = xyz.transpose(1, 2).contiguous()
         grouped_xyz = grouping_operation(xyz_trans, idx)  # (B, 3, npoint, nsample)
         grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
+        if (grouped_xyz > self.radius).any():
+            print("ERROR: 领域点出错")
 
         points = xyz.transpose(1,2)
         keypoints = new_xyz.transpose(1, 2)
