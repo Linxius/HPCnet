@@ -158,7 +158,7 @@ def load_checkpoint(model, filename):
 
 
 def train_and_eval(model, train_loader, eval_loader, tb_log, ckpt_dir, log_f):
-    model.cuda()
+    # model.cuda()
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     def lr_lbmd(cur_epoch):
@@ -185,7 +185,10 @@ def train_and_eval(model, train_loader, eval_loader, tb_log, ckpt_dir, log_f):
 if __name__ == '__main__':
     MODEL = importlib.import_module(args.net)  # import network module
     model = MODEL.get_model(input_channels=0)
-    model = nn.DataParallel(model, device_ids=gpus, output_device=gpus[0])
+    model.cuda()
+    ################ uncomment to use DataParallel ###########################
+    # model = nn.DataParallel(model, device_ids=gpus, output_device=gpus[0])
+    ##########################################################################
 
     eval_set = KittiDataset(root_dir='./data', mode='EVAL', split='val')
     eval_loader = DataLoader(eval_set, batch_size=args.batch_size, shuffle=False, pin_memory=True,

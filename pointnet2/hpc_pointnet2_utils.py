@@ -267,11 +267,7 @@ class HPC_Group(nn.Module):
                 new_features = torch.cat([gtfeatures, grouped_features], dim=1)  # (B, C + 3, npoint, nsample)
         else:
             assert self.use_xyz, "Cannot have not features and not use xyz as a feature!"
-            # new_features = grouped_xyz
             new_features = torch.cat([grouped_xyz[:,:,:,0], gtfeatures], dim=1)  # (B, C + 3, npoint, nsample)
-        # print("new_features")
-        # print(new_features.size()) #torch.Size([8, 45, 4096])
-        # new_features = torch.cat([new_features, gtfeatures], dim = 1)
 
         return new_features
 
