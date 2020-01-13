@@ -7,7 +7,7 @@ from typing import Tuple
 import pointnet2_cuda as pointnet2
 
 class getNeighborsR(Function):
-
+# class BallQuery(Function):
     @staticmethod
     def forward(ctx, radius: float, xyz: torch.Tensor, new_xyz: torch.Tensor) -> torch.Tensor:
         """
