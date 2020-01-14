@@ -37,10 +37,12 @@ class getGtFeature(Function):
         keyclouds = keyclouds.share_memory_()
         feature = torch.zeros(batch_size, len(vKeyshapes), point_num,requires_grad=False).share_memory_()
         grouped_xyz = grouped_xyz.permute(1, 2, 3, 0).share_memory_()
+        vKeyshapes = torch.Tensor(vKeyshapes).share_memory_()
+        vShapedicts = torch.Tensor(vShapedicts).share_memory_()
 
         r2 = radius ** 2
-        for k in range(1):
-            for i in range(int(50)):
+        for k in range(batch_size):
+            for i in range(point_num):
                 points_neighbor = grouped_xyz[k,:,i,:].transpose(0,1)
 
                 for j in range( gt_feature_len ):
@@ -55,18 +57,12 @@ class getGtFeature(Function):
                             fToTempDis = fOneDis
 
                     fToSourceDis = 0
-                    for it in range(len(vKeyshapes[j])):
+                    for it in range(vKeyshapes[j].shape[0]):
                         minPointPairdis = 99.9
                         for iit in range(points_neighbor.size()[0]):
                             oneneardis = ((vKeyshapes[j][it][0]-points_neighbor[iit][0])**2 + \
                                             (vKeyshapes[j][it][1]-points_neighbor[iit][1])**2 + \
                                             (vKeyshapes[j][it][2]-points_neighbor[iit][2])**2)
-                            # TODO 领域点出错
-                            if oneneardis > r2:
-                                # print("ERROR: oneneardis {} > r2 {}".format(oneneardis, r2))
-                                # print(vKeyshapes[j][it])
-                                # print(points_neighbor[iit])
-                                oneneardis=r2
                             if minPointPairdis > oneneardis:
                                 minPointPairdis = oneneardis
                         if fToSourceDis < minPointPairdis:
