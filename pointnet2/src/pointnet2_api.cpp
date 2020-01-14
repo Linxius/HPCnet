@@ -7,10 +7,12 @@
 #include "sampling_gpu.h"
 #include "interpolate_gpu.h"
 
+#include "get_hausdorff__dis_gpu.h"
+
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("ball_query_wrapper", &ball_query_wrapper_fast, "ball_query_wrapper_fast");
-    m.def("get_max_dis_wrapper", &get_max_dis_wrapper_fast, "get_max_dis_wrapper_fast");
+    m.def("get_hausdorff_dis_wrapper", &get_hausdorff_dis_wrapper_fast, "get_hausdorff_dis_wrapper_fast");
 
     m.def("group_points_wrapper", &group_points_wrapper_fast, "group_points_wrapper_fast");
     m.def("group_points_grad_wrapper", &group_points_grad_wrapper_fast, "group_points_grad_wrapper_fast");

@@ -1,4 +1,5 @@
 import torch
+from typing import Tuple
 from torch.autograd import Variable
 from torch.autograd import Function
 import torch.nn as nn
@@ -10,21 +11,21 @@ import os
 import sys
 import torch.multiprocessing as mp
 
-theads_num = 32
+import pointnet2_cuda as pointnet2
 
 class getGtFeature(Function):
     @staticmethod
     def forward(ctx, points: torch.Tensor, keyclouds: torch.Tensor, \
-                grouped_xyz: torch.Tensor, radius: float) -> torch.Tensor:
+                grouped_xyz: torch.Tensor, radius: float, nsample: float) -> torch.Tensor:
         """
         points: B C N
         keyclouds: B C N
-        grouped_xyz: nsamples B C N
+        grouped_xyz: B N nsample C
         """
         root = "./HausdorffTest/shapes/" + str(radius)
         vKeyshapes, vShapedicts = LoadGivenShapes(root)
+        # prior_shapes, dis_dicts = LoadGivenShapes(root)
         gt_feature_len = len(vShapedicts)
-
         voxel_num_1dim = 30
         voxel_len = 2*radius / voxel_num_1dim
         voxel_num_1dim = int(2*radius/voxel_len + 1)
@@ -33,44 +34,17 @@ class getGtFeature(Function):
         point_dim = keyclouds.size()[1]
         point_num = keyclouds.size()[2]
 
-        points = points.share_memory_()
-        keyclouds = keyclouds.share_memory_()
-        feature = torch.zeros(batch_size, len(vKeyshapes), point_num,requires_grad=False).share_memory_()
-        grouped_xyz = grouped_xyz.permute(1, 2, 3, 0).share_memory_()
+        print(torch.Tensor(vKeyshapes).size())
+        print(torch.Tensor(vShapedicts).size())
+        import pdb; pdb.set_trace()
+        # feature = torch.zeros(batch_size, len(vKeyshapes), point_num, requires_grad=False)
+        feature = torch.cuda.FloatTensor(batch_size, point_num, len(vKeyshapes))
 
-        r2 = radius ** 2
-        for k in range(batch_size):
-            clouds = points[k,:,:].transpose(0,1)
-            # keypoints = keyclouds[k,:,:].transpose(0,1)
-
-            for i in range(point_num):
-                points_neighbor = grouped_xyz[k,:,i,:].transpose(0,1)
-
-                for j in range( gt_feature_len ):
-                    fToTempDis = 0
-                    for it in range(len(points_neighbor)):
-                        ith = math.floor(abs(points_neighbor[it][0] + radius) / voxel_len)
-                        jth = math.floor(abs(points_neighbor[it][1] + radius) / voxel_len)
-                        kth = math.floor(abs(points_neighbor[it][2] + radius) / voxel_len)
-                        assert ith < 31 and jth < 31 and kth < 31
-                        iOneIdx = int(ith + jth * voxel_num_1dim + kth * voxel_num_1dim * voxel_num_1dim)
-                        fOneDis = vShapedicts[j][iOneIdx]
-                        if fToTempDis < fOneDis:
-                            fToTempDis = fOneDis
-
-                    fToSourceDis = 0
-                    for it in range(len(vKeyshapes[j])):
-                        for iit in range(points_neighbor.size()[0]):
-                            oneneardis = ((vKeyshapes[j][it][0]-points_neighbor[iit][0])**2 + \
-                                            (vKeyshapes[j][it][0]-points_neighbor[iit][0])**2 + \
-                                            (vKeyshapes[j][it][0]-points_neighbor[iit][0])**2)
-                            if fToSourceDis < oneneardis:
-                                fToSourceDis = oneneardis
-                    fToSourceDis = math.sqrt(fToSourceDis)
-
-                    fGenHdis = fToTempDis if fToTempDis > fToSourceDis else fToSourceDis
-                    fGenHdis = 1.0 if fGenHdis > radius else fGenHdis / radius
-                    feature[k, j, i] = 1 - fGenHdis
+        pointnet2.get_hausdorff_dis_wrapper(points, keyclouds, grouped_xyz, feature, radius,\
+                                            batch_size, point_dim, point_num, nsample, \
+                                            torch.Tensor(vKeyshapes), torch.Tensor(vShapedicts), \
+                                            voxel_len)#,\
+                                            #gt_feature_len, voxel_num_1dim)
 
         return feature
 
