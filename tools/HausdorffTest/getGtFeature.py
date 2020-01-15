@@ -50,6 +50,7 @@ class getGtFeature(Function):
                                             prior_points, dis_dicts,\
                                             voxel_len)
 
+        # print(feature[0,10:20,:])
         return feature
 
     # @staticmethod

@@ -28,13 +28,13 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_po
     //     features: batch_size Nshapes point_num
 
     // dim3 blocks(DIVUP(point_num, THREADS_PER_BLOCK), batch_size);  // blockIdx.x(col), blockIdx.y(row)
-    // dim3 threads(DIVUP(THREADS_PER_BLOCK, gt_num), gt_num);
+    // dim3 threads(gt_num, DIVUP(THREADS_PER_BLOCK, gt_num));
     int batch_idx = blockIdx.y;
     int point_idx = blockIdx.x * blockDim.y + threadIdx.y;
     int gt_idx = threadIdx.x;
 
     // keypoints = batch_idx * keypoint_num * 3 + point_idx * 3;
-    whole_points += batch_idx * whole_point_num * 3;
+    // whole_points += batch_idx * whole_point_num * 3;
     neighbor_points += batch_idx * keypoint_num * neighbor_point_num * 3 + point_idx * neighbor_point_num * 3;
     features += batch_idx * keypoint_num * gt_num + point_idx * gt_num + gt_idx;
     dis_dicts += gt_idx * dict_grid_num;
@@ -81,7 +81,7 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_po
     prior_to_dis = sqrt(prior_to_dis);
 
     float hsdf_dis = prior_to_dis > to_prior_dis? prior_to_dis : to_prior_dis;
-    *features  = hsdf_dis > radius? 1 : hsdf_dis / radius;
+    *features  = hsdf_dis > radius? 0 : (radius-hsdf_dis) / radius;
 }
 
 void get_hausdorff_dis_kernel_launcher_fast(const float* whole_points, const float* keypoints,
@@ -106,7 +106,7 @@ void get_hausdorff_dis_kernel_launcher_fast(const float* whole_points, const flo
     // ball_query_kernel_fast<<<blocks, threads, 0, stream>>>(b, n, m, radius, nsample, new_xyz, xyz, idx);
 
     dim3 blocks(DIVUP(keypoint_num, THREADS_PER_BLOCK), batch_size);
-    dim3 threads(DIVUP(THREADS_PER_BLOCK, gt_num), gt_num);
+    dim3 threads(gt_num, DIVUP(THREADS_PER_BLOCK, gt_num));
 
     get_hausdorff_dis_kernel_fast<<<blocks, threads, 0, stream>>>(
         whole_points, keypoints, neighbor_points, features, radius, batch_size, whole_point_num,
