@@ -7,77 +7,94 @@
 
 #define gt_num 42
 #define voxel_dim 31
+#define dict_grid_num (voxel_dim*voxel_dim*voxel_dim)
+#define prior_point_num 10
 
-__global__ void get_hausdorff_dis_kernel_fast(const float* __restrict__ whole_points,
-                                            const float* __restrict__ keypoints,
-                                            const float* __restrict__ neighbor_points,
-                                            float* __restrict__ features, float radius,
-                                            int batch_size, int point_dim, int point_num, int nsample,
-                                            const float* __restrict__ prior_shapes,
-                                            const float* __restrict__ dis_dicts,
-                                            float voxel_len, cudaStream_t stream){
+__global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_points,
+                                              const float *__restrict__ keypoints,
+                                              const float *__restrict__ neighbor_points,
+                                              float *__restrict__ features, float radius,
+                                              int batch_size, int whole_point_num,
+                                              int keypoint_num, int neighbor_point_num,
+                                              const float* __restrict__ prior_points,
+                                              const float* __restrict__ dis_dicts,
+                                              float voxel_len, cudaStream_t stream){
     // whole_points: B N C
     // keypoints: B M C
     // neighbor_points: B M nsample C
-    // prior_shapes: Nshapes Npoints_per_shape Cxyz
+    // prior_points: Nshapes Npoints_per_shape Cxyz
     // dis_dicts: Nshapes Ngrid Cxyz
     // output:
     //     features: batch_size Nshapes point_num
 
     // dim3 blocks(DIVUP(point_num, THREADS_PER_BLOCK), batch_size);  // blockIdx.x(col), blockIdx.y(row)
     // dim3 threads(DIVUP(THREADS_PER_BLOCK, gt_num), gt_num);
-    int batch_idx_block = blockIdx.y;
-    int point_idx_block = threadIdx.y;
-    int gt_idx_block = threadIdx.x;
-    // int point_idx = blockIdx.y * blockDim.x + threadIdx.y * threadDim.x
-    int batch_idx = batch_idx_block;
-    int point_idx = batch_idx * batch_size + point_idx_block * gt_num;
-    int gt_idx = point_idx + gt_idx_block;
+    int batch_idx = blockIdx.y;
+    int point_idx = blockIdx.x * blockDim.y + threadIdx.y;
+    int gt_idx = threadIdx.x;
 
+    // keypoints = batch_idx * keypoint_num * 3 + point_idx * 3;
+    whole_points += batch_idx * whole_point_num * 3;
+    neighbor_points += batch_idx * keypoint_num * neighbor_point_num * 3 + point_idx * neighbor_point_num * 3;
+    features += batch_idx * keypoint_num * gt_num + point_idx * gt_num + gt_idx;
+    dis_dicts += gt_idx * dict_grid_num;
+    prior_points += gt_idx * prior_point_num * 3;
 
-    float r2 = radius ** 2
-    // for k in range(batch_size): # B parallelable
-    //     for i in range(point_num): # M parallelable
-    //         points_neighbor = grouped_xyz[k,:,i,:].transpose(0,1)
-    //         for j in range( gt_feature_len ): # Nshapes parallelable
-    //             fToTempDis = 0
-    //             for it in range(len(points_neighbor)):
-    //                 ith = math.floor(abs(points_neighbor[it][0] + radius) / voxel_len)
-    //                 jth = math.floor(abs(points_neighbor[it][1] + radius) / voxel_len)
-    //                 kth = math.floor(abs(points_neighbor[it][2] + radius) / voxel_len)
-    //                 iOneIdx = int(ith + jth * voxel_num_1dim + kth * voxel_num_1dim * voxel_num_1dim)
-    //                 fOneDis = vShapedicts[j][iOneIdx]
-    //                 if fToTempDis < fOneDis:
-    //                     fToTempDis = fOneDis
+    // float r2 = radius * radius;
+    // float keypoint_x = keypoints[0];
+    // float keypoint_y = keypoints[1];
+    // float keypoint_z = keypoints[2];
 
-    //             fToSourceDis = 0
-    //             for it in range(vKeyshapes[j].shape[0]):
-    //                 minPointPairdis = 99.9
-    //                 for iit in range(points_neighbor.size()[0]):
-    //                     oneneardis = ((vKeyshapes[j][it][0]-points_neighbor[iit][0])**2 + \
-    //                                     (vKeyshapes[j][it][1]-points_neighbor[iit][1])**2 + \
-    //                                     (vKeyshapes[j][it][2]-points_neighbor[iit][2])**2)
-    //                     if minPointPairdis > oneneardis:
-    //                         minPointPairdis = oneneardis
-    //                 if fToSourceDis < minPointPairdis:
-    //                     fToSourceDis = minPointPairdis
+    float to_prior_dis = 0;
+    float tmp_dis;
+    int xth, yth, zth;
+    int i;
+    int prior_hash_idx;
+    for( i = 0; i < neighbor_point_num; i++ ){
+        xth = floor(abs(neighbor_points[i*3 + 0] + radius) / voxel_len);
+        yth = floor(abs(neighbor_points[i*3 + 1] + radius) / voxel_len);
+        zth = floor(abs(neighbor_points[i*3 + 2] + radius) / voxel_len);
+        prior_hash_idx = xth + yth * voxel_dim + zth * voxel_dim * voxel_dim;
+        tmp_dis = dis_dicts[prior_hash_idx];
+        if( to_prior_dis < tmp_dis ){
+            to_prior_dis = tmp_dis;
+        }
+    }
 
-    //             fToSourceDis = math.sqrt(fToSourceDis)
-    //             fGenHdis = fToTempDis if fToTempDis > fToSourceDis else fToSourceDis
-    //             fGenHdis = 1.0 if fGenHdis > radius else fGenHdis / radius
-    //             feature[k, j, i] = 1 - fGenHdis
+    float prior_to_dis = 0;
+    float min_point_pair_dis;
+    int j;
+    for( i = 0; i < gt_num; i++ ){
+        min_point_pair_dis = 99.9;
+        for( j = 0; j < neighbor_point_num; j++ ){
+            tmp_dis = ( pow(prior_points[i*3 + 0] - neighbor_points[j*3 + 0], 2) +
+                        pow(prior_points[i*3 + 1] - neighbor_points[j*3 + 1], 2) +
+                        pow(prior_points[i*3 + 2] - neighbor_points[j*3 + 2], 2) );
+            if( min_point_pair_dis > tmp_dis ){
+                min_point_pair_dis = tmp_dis;
+            }
+        }
+        if( min_point_pair_dis > prior_to_dis ){
+            prior_to_dis = min_point_pair_dis;
+        }
+    }
+    prior_to_dis = sqrt(prior_to_dis);
+
+    float hsdf_dis = prior_to_dis > to_prior_dis? prior_to_dis : to_prior_dis;
+    *features  = hsdf_dis > radius? 1 : hsdf_dis / radius;
 }
 
 void get_hausdorff_dis_kernel_launcher_fast(const float* whole_points, const float* keypoints,
-                                           const float*  neighbor_points,
-                                           float* features, float radius,
-                                           int batch_size, int point_dim, int point_num, int nsample,
-                                           const float* prior_shapes, const float* dis_dicts,
+                                            const float*  neighbor_points,
+                                            float* features, float radius,
+                                            int batch_size, int whole_point_num, int keypoint_num,
+                                            int neighbor_point_num,
+                                            const float* prior_points, const float* dis_dicts,
                                             float voxel_len, cudaStream_t stream){
     // whole_points: B N C
     // keypoints: B N C
     // neighbor_points: B N nsample C
-    // prior_shapes: Nshapes Npoints_per_shape Cxyz
+    // prior_points: Nshapes Npoints_per_shape Cxyz
     // dis_dicts: Nshapes N_hash_grid_per_shape Cxyz
     // output:
     //     features: batch_size point_num Nshapes
@@ -88,14 +105,14 @@ void get_hausdorff_dis_kernel_launcher_fast(const float* whole_points, const flo
     // dim3 threads(THREADS_PER_BLOCK);
     // ball_query_kernel_fast<<<blocks, threads, 0, stream>>>(b, n, m, radius, nsample, new_xyz, xyz, idx);
 
-    dim3 blocks(DIVUP(point_num, THREADS_PER_BLOCK), batch_size);
+    dim3 blocks(DIVUP(keypoint_num, THREADS_PER_BLOCK), batch_size);
     dim3 threads(DIVUP(THREADS_PER_BLOCK, gt_num), gt_num);
 
     get_hausdorff_dis_kernel_fast<<<blocks, threads, 0, stream>>>(
-        whole_points, keypoints, neighbor_points, features, radius, batch_size, point_num,
-        point_num, nsample, prior_shapes, dis_dicts, voxel_len)
+        whole_points, keypoints, neighbor_points, features, radius, batch_size, whole_point_num,
+        keypoint_num, neighbor_point_num, prior_points, dis_dicts, voxel_len, stream);
 
-    cudaDeviceSynchronize();  // for using printf in kernel function
+    // cudaDeviceSynchronize();  // for using printf in kernel function
     err = cudaGetLastError();
     if (cudaSuccess != err) {
         fprintf(stderr, "CUDA kernel failed : %s\n", cudaGetErrorString(err));

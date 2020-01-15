@@ -15,36 +15,35 @@ import pointnet2_cuda as pointnet2
 
 class getGtFeature(Function):
     @staticmethod
-    def forward(ctx, points: torch.Tensor, keyclouds: torch.Tensor, \
-                grouped_xyz: torch.Tensor, radius: float, nsample: float) -> torch.Tensor:
+    def forward(ctx, whole_points: torch.Tensor, keypoints: torch.Tensor, \
+                neighbor_points: torch.Tensor, radius: float, neighbor_point_num: float)\
+                -> torch.Tensor:
         """
-        points: B C N
-        keyclouds: B C N
-        grouped_xyz: B N nsample C
+        whole_points: B C N
+        keypoints: B N C
+        neighbor_points: B N nsample C
+        output: feature: B M gt_num
         """
         root = "./HausdorffTest/shapes/" + str(radius)
-        vKeyshapes, vShapedicts = LoadGivenShapes(root)
-        # prior_shapes, dis_dicts = LoadGivenShapes(root)
-        gt_feature_len = len(vShapedicts)
-        voxel_num_1dim = 30
-        voxel_len = 2*radius / voxel_num_1dim
-        voxel_num_1dim = int(2*radius/voxel_len + 1)
+        prior_points, dis_dicts = LoadGivenShapes(root)
+        # gt_feature_len = len(dis_dicts)
+        voxel_dim = 30
+        voxel_len = 2*radius / voxel_dim
+        # voxel_dim = int(2*radius/voxel_len + 1)
 
-        batch_size = keyclouds.size()[0]
-        point_dim = keyclouds.size()[1]
-        point_num = keyclouds.size()[2]
+        batch_size, keypoint_num, point_dim= keypoints.size()
+        whole_point_num = whole_points.size()[0]
 
-        print(torch.Tensor(vKeyshapes).size())
-        print(torch.Tensor(vShapedicts).size())
-        import pdb; pdb.set_trace()
-        # feature = torch.zeros(batch_size, len(vKeyshapes), point_num, requires_grad=False)
-        feature = torch.cuda.FloatTensor(batch_size, point_num, len(vKeyshapes))
+        # feature = torch.zeros(batch_size, len(prior_shapes), point_num, requires_grad=False)
+        feature = torch.cuda.FloatTensor(batch_size, keypoint_num, len(prior_points))
 
-        pointnet2.get_hausdorff_dis_wrapper(points, keyclouds, grouped_xyz, feature, radius,\
-                                            batch_size, point_dim, point_num, nsample, \
-                                            torch.Tensor(vKeyshapes), torch.Tensor(vShapedicts), \
+        pointnet2.get_hausdorff_dis_wrapper(whole_points, keypoints, neighbor_points, feature, radius,\
+                                            batch_size, \
+                                            whole_point_num, keypoint_num, neighbor_point_num, \
+                                            torch.cuda.FloatTensor(prior_points), \
+                                            torch.cuda.FloatTensor(dis_dicts), \
                                             voxel_len)#,\
-                                            #gt_feature_len, voxel_num_1dim)
+                                            #gt_feature_len, voxel_dim)
 
         return feature
 

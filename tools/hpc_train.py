@@ -14,9 +14,9 @@ import importlib
 import torch.distributed as dist
 
 parser = argparse.ArgumentParser(description="Arg parser")
-parser.add_argument("--batch_size", type=int, default=8)
+parser.add_argument("--batch_size", type=int, default=32)
 parser.add_argument("--epochs", type=int, default=100)
-parser.add_argument("--ckpt_save_interval", type=int, default=5)
+parser.add_argument("--ckpt_save_interval", type=int, default=1)
 parser.add_argument('--workers', type=int, default=4)
 parser.add_argument("--mode", type=str, default='train')
 parser.add_argument("--ckpt", type=str, default='None')

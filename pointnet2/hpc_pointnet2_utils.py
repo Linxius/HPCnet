@@ -254,8 +254,9 @@ class HPC_Group(nn.Module):
         grouped_xyz = grouping_operation(xyz_trans, idx)  # (B, 3, npoint, nsample)
         grouped_xyz -= new_xyz.transpose(1, 2).unsqueeze(-1)
 
-        gtfeatures = get_gt_feature(xyz, new_xyz, grouped_xyz.permute(0,2,3,1), \
-                                    self.radius, self.nsample) #torch.Size([8, 42, 4096])
+        gtfeatures = get_gt_feature(xyz, new_xyz, \
+                                    grouped_xyz.permute(0,2,3,1).contiguous(),\
+                                    self.radius, self.nsample).transpose(1,2) # 8 42 4096
 
         if features is not None:
             grouped_features = grouping_operation(features, idx)
@@ -271,7 +272,6 @@ class HPC_Group(nn.Module):
             assert self.use_xyz, "Cannot have not features and not use xyz as a feature!"
             new_features = torch.cat([grouped_xyz[:,:,:,0], \
                                       gtfeatures], dim=1)  # (B, C + 3, npoint, nsample)
-
         return new_features
 
 class QueryAndGroup(nn.Module):

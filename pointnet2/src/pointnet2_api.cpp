@@ -2,12 +2,11 @@
 #include <torch/extension.h>
 
 #include "ball_query_gpu.h"
-#include "get_max_dis_gpu.h"
 #include "group_points_gpu.h"
 #include "sampling_gpu.h"
 #include "interpolate_gpu.h"
 
-#include "get_hausdorff__dis_gpu.h"
+#include "get_hausdorff_dis_gpu.h"
 
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
