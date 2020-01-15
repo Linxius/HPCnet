@@ -11,7 +11,7 @@ import os
 import sys
 import torch.multiprocessing as mp
 
-import pointnet2_cuda as pointnet2
+import HPCnet_cuda as HPCnet
 
 class getGtFeature(Function):
     @staticmethod
@@ -26,6 +26,11 @@ class getGtFeature(Function):
         """
         root = "./HausdorffTest/shapes/" + str(radius)
         prior_points, dis_dicts = LoadGivenShapes(root)
+        dis_dicts = torch.Tensor(dis_dicts)
+        prior_points = torch.Tensor(prior_points)
+        dis_dicts.cuda()
+        prior_points.cuda()
+        # import pdb; pdb.set_trace()
         # gt_feature_len = len(dis_dicts)
         voxel_dim = 30
         voxel_len = 2*radius / voxel_dim
@@ -35,13 +40,17 @@ class getGtFeature(Function):
         whole_point_num = whole_points.size()[0]
 
         # feature = torch.zeros(batch_size, len(prior_shapes), point_num, requires_grad=False)
-        feature = torch.cuda.FloatTensor(batch_size, keypoint_num, len(prior_points))
+        feature = torch.cuda.FloatTensor(batch_size, keypoint_num, len(prior_points)).zero_()
+        # print(type(feature))
+        # print(type(dis_dicts))
+        # import pdb; pdb.set_trace()
 
-        pointnet2.get_hausdorff_dis_wrapper(whole_points, keypoints, neighbor_points, feature, radius,\
+        HPCnet.get_hausdorff_dis_wrapper(whole_points, keypoints, neighbor_points, feature, radius,\
                                             batch_size, \
                                             whole_point_num, keypoint_num, neighbor_point_num, \
-                                            torch.cuda.FloatTensor(prior_points), \
-                                            torch.cuda.FloatTensor(dis_dicts), \
+                                            # torch.cuda.FloatTensor(prior_points), \
+                                            # torch.cuda.FloatTensor(dis_dicts), \
+                                            prior_points, dis_dicts,\
                                             voxel_len)#,\
                                             #gt_feature_len, voxel_dim)
 
@@ -49,6 +58,6 @@ class getGtFeature(Function):
 
     @staticmethod
     def backward(ctx, a = None):
-        return None, None, None, None
+        return None, None, None, None, None
 
 get_gt_feature = getGtFeature.apply

@@ -19,21 +19,19 @@ int get_hausdorff_dis_wrapper_fast(at::Tensor whole_points_tensor, at::Tensor ke
                                    int keypoint_num, int neighbor_point_num,
                                    at::Tensor prior_points_tensor, at::Tensor dis_dicts_tensor,
                                    float voxel_len){
-    printf("a\n");
+    printf("begin check input type");
     CHECK_INPUT(whole_points_tensor);
     CHECK_INPUT(keypoints_tensor);
     CHECK_INPUT(neighbor_points_tensor);
-    // CHECK_INPUT(prior_points_tensor);
-    // CHECK_INPUT(dis_dicts_tensor);
-    printf("b\n");
+    CHECK_INPUT(prior_points_tensor);
+    CHECK_INPUT(dis_dicts_tensor);
+    printf("end check input type");
     const float *whole_points = whole_points_tensor.data<float>();
     const float *keypoints = keypoints_tensor.data<float>();
     const float *neighbor_points = neighbor_points_tensor.data<float>();
     const float *prior_points = prior_points_tensor.data<float>();
     const float *dis_dicts = dis_dicts_tensor.data<float>();
     float *features = features_tensor.data<float>();
-
-    printf("c\n");
 
     cudaStream_t stream = THCState_getCurrentStream(state);
     // ball_query_kernel_launcher_fast(b, n, m, radius, nsample, new_xyz, xyz, idx, stream);
