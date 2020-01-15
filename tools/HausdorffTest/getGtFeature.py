@@ -26,15 +26,14 @@ class getGtFeature(Function):
         """
         root = "./HausdorffTest/shapes/" + str(radius)
         prior_points, dis_dicts = LoadGivenShapes(root)
-        dis_dicts = torch.Tensor(dis_dicts)
-        prior_points = torch.Tensor(prior_points)
-        dis_dicts.cuda()
-        prior_points.cuda()
-        # import pdb; pdb.set_trace()
+
+        dis_dicts = torch.cuda.FloatTensor(dis_dicts)
+        prior_points = torch.cuda.FloatTensor(prior_points)
         # gt_feature_len = len(dis_dicts)
+
         voxel_dim = 30
         voxel_len = 2*radius / voxel_dim
-        # voxel_dim = int(2*radius/voxel_len + 1)
+        voxel_dim = int(2*radius/voxel_len + 1)
 
         batch_size, keypoint_num, point_dim= keypoints.size()
         whole_point_num = whole_points.size()[0]
@@ -43,21 +42,18 @@ class getGtFeature(Function):
         feature = torch.cuda.FloatTensor(batch_size, keypoint_num, len(prior_points)).zero_()
         # print(type(feature))
         # print(type(dis_dicts))
-        # import pdb; pdb.set_trace()
 
+        # import pdb; pdb.settrace()
         HPCnet.get_hausdorff_dis_wrapper(whole_points, keypoints, neighbor_points, feature, radius,\
                                             batch_size, \
                                             whole_point_num, keypoint_num, neighbor_point_num, \
-                                            # torch.cuda.FloatTensor(prior_points), \
-                                            # torch.cuda.FloatTensor(dis_dicts), \
                                             prior_points, dis_dicts,\
-                                            voxel_len)#,\
-                                            #gt_feature_len, voxel_dim)
+                                            voxel_len)
 
         return feature
 
-    @staticmethod
-    def backward(ctx, a = None):
-        return None, None, None, None, None
+    # @staticmethod
+    # def backward(feature, a = None):
+    #     return None, None, None, None, None
 
 get_gt_feature = getGtFeature.apply

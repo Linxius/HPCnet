@@ -20,9 +20,10 @@ int get_hausdorff_dis_wrapper_fast(at::Tensor whole_points_tensor, at::Tensor ke
                                    at::Tensor prior_points_tensor, at::Tensor dis_dicts_tensor,
                                    float voxel_len){
     printf("a\n");
-    CHECK_INPUT(whole_points_tensor);
-    CHECK_INPUT(keypoints_tensor);
-    CHECK_INPUT(neighbor_points_tensor);
+    printf("asdf%s\b", whole_points_tensor.type().is_cuda());
+    // CHECK_INPUT(whole_points_tensor);
+    // CHECK_INPUT(keypoints_tensor);
+    // CHECK_INPUT(neighbor_points_tensor);
     // CHECK_INPUT(prior_points_tensor);
     // CHECK_INPUT(dis_dicts_tensor);
     printf("b\n");

@@ -6,8 +6,8 @@ setup(
     ext_modules=[
         CUDAExtension('pointnet2_cuda', [
             'src/pointnet2_api.cpp',
-            'src/get_hausdorff_dis.cpp',
-            'src/get_hausdorff_dis_gpu.cu',
+            # 'src/get_hausdorff_dis.cpp',
+            # 'src/get_hausdorff_dis_gpu.cu',
             'src/ball_query.cpp',
             'src/ball_query_gpu.cu',
             'src/group_points.cpp',

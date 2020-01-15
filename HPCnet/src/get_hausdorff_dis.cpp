@@ -19,13 +19,12 @@ int get_hausdorff_dis_wrapper_fast(at::Tensor whole_points_tensor, at::Tensor ke
                                    int keypoint_num, int neighbor_point_num,
                                    at::Tensor prior_points_tensor, at::Tensor dis_dicts_tensor,
                                    float voxel_len){
-    printf("begin check input type");
     CHECK_INPUT(whole_points_tensor);
     CHECK_INPUT(keypoints_tensor);
     CHECK_INPUT(neighbor_points_tensor);
-    CHECK_INPUT(prior_points_tensor);
-    CHECK_INPUT(dis_dicts_tensor);
-    printf("end check input type");
+    CHECK_INPUT(features_tensor);
+    // CHECK_INPUT(prior_points_tensor);
+    // CHECK_INPUT(dis_dicts_tensor);
     const float *whole_points = whole_points_tensor.data<float>();
     const float *keypoints = keypoints_tensor.data<float>();
     const float *neighbor_points = neighbor_points_tensor.data<float>();

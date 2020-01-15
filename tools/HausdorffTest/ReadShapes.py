@@ -1,6 +1,7 @@
 import os
 import os.path
 import sys
+import torch
 
 """
 Created on Wed Dec 11 22:53:52 2019
@@ -76,8 +77,8 @@ def LoadGivenShapes(root):
     :return:keyshapes - a lots of point clouds, a point clouds is a tuple of poiclass PointXYZ
             shapedicts - the dictionaries denote the distance from space to given shapes, each dictionary is a tuple of distance value
     """
-    shapetitles = get_shapelists(root)
 
+    shapetitles = get_shapelists(root)
     #key points of shapes
     keyshapes = []
     #dictionaries of shapes
