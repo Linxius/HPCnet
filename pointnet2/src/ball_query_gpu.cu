@@ -6,14 +6,15 @@
 #include "cuda_utils.h"
 
 
-__global__ void ball_query_kernel_fast(int b, int n, int m, float radius, int nsample, 
+__global__ void ball_query_kernel_fast(int b, int n, int m, float radius, int nsample,
     const float *__restrict__ new_xyz, const float *__restrict__ xyz, int *__restrict__ idx) {
     // new_xyz: (B, M, 3)
     // xyz: (B, N, 3)
     // output:
     //      idx: (B, M, nsample)
     int bs_idx = blockIdx.y;
-    int pt_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    // int pt_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int pt_idx = blockIdx.y * blockDim.x + threadIdx.x;
     if (bs_idx >= b || pt_idx >= m) return;
 
     new_xyz += bs_idx * m * 3 + pt_idx * 3;
