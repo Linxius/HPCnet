@@ -40,7 +40,8 @@ class getGtFeature(Function):
         whole_point_num = whole_points.size()[0]
 
         feature = torch.cuda.FloatTensor(batch_size, keypoint_num, len(prior_points)).zero_()
-        HPCnet.get_hausdorff_dis_wrapper(whole_points, keypoints, neighbor_points, feature, radius,\
+        # HPCnet.get_hausdorff_dis_wrapper(whole_points, keypoints, neighbor_points, feature, radius,\
+        HPCnet.get_hausdorff_dis_wrapper(neighbor_points, feature, radius,\
                                             batch_size, \
                                             whole_point_num, keypoint_num, neighbor_point_num, \
                                             prior_points, dis_dicts,\
