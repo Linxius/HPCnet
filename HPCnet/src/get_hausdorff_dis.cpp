@@ -31,7 +31,7 @@ int get_hausdorff_dis_wrapper_fast(at::Tensor neighbor_points_tensor,
 
     cudaStream_t stream = THCState_getCurrentStream(state);
     // ball_query_kernel_launcher_fast(b, n, m, radius, nsample, new_xyz, xyz, idx, stream);
-    get_hausdorff_dis_kernel_launcher_fast(whole_points, keypoints, neighbor_points, features,
+    get_hausdorff_dis_kernel_launcher_fast(neighbor_points, features,
                                            radius, batch_size,
                                            whole_point_num, keypoint_num, neighbor_point_num,
                                            prior_points, dis_dicts, voxel_len, stream);
