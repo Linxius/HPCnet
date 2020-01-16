@@ -59,8 +59,8 @@ class getGtFeature(Function):
         # with open("./output/feature.txt", 'a') as feature_file:
         #     np.savetxt(feature_file, feature[0,200:256,:].cpu().detach().numpy())
 
-        # # print(feature[0,100:120,:])
-        # # import pdb; pdb.set_trace()
+        print(feature[0,100:120,:])
+        import pdb; pdb.set_trace()
         return feature
 
     # @staticmethod
