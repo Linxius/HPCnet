@@ -27,14 +27,27 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_po
     // output:
     //     features: batch_size Nshapes point_num
 
-    // dim3 blocks(DIVUP(point_num, THREADS_PER_BLOCK), batch_size);  // blockIdx.x(col), blockIdx.y(row)
-    // dim3 threads(DIVUP(THREADS_PER_BLOCK, gt_num), gt_num);
+    // dim3 blocks(DIVUP(point_num*gt_num, THREADS_PER_BLOCK), batch_size);
+    // dim3 threads(gt_num, DIVUP(THREADS_PER_BLOCK, gt_num));
+    // dim3 blocks(keypoint_num/16, batch_size);
+    // dim3 threads(gt_num, 16);
     int batch_idx = blockIdx.y;
-    int point_idx = blockIdx.x * blockDim.y + threadIdx.y;
+    // int point_idx = blockIdx.x * blockDim.y + threadIdx.y;
+    int point_idx = blockIdx.x * 16 + threadIdx.y;
     int gt_idx = threadIdx.x;
 
+    printf("blockDim.x %d\n", blockDim.x);
+    printf("blockDim.y %d\n", blockDim.y);
+    printf("gridDim.x %d\n", gridDim.x);
+    printf("gridDim.y %d\n", gridDim.y);
+    printf("threadIdx.x %d\n", threadIdx.x);
+    printf("threadIdx.y %d\n", threadIdx.y);
+    pirntf("blockIdx.x %d\n", blockIdx.x);
+    pirntf("blockIdx.y %d\n", blockIdx.y);
+    printf("point_idx %d\n", point_idx);
+    printf("gt_idx %d\n", gt_idx);
     // keypoints = batch_idx * keypoint_num * 3 + point_idx * 3;
-    whole_points += batch_idx * whole_point_num * 3;
+    // whole_points += batch_idx * whole_point_num * 3;
     neighbor_points += batch_idx * keypoint_num * neighbor_point_num * 3 + point_idx * neighbor_point_num * 3;
     features += batch_idx * keypoint_num * gt_num + point_idx * gt_num + gt_idx;
     dis_dicts += gt_idx * dict_grid_num;
@@ -64,7 +77,7 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_po
     float prior_to_dis = 0;
     float min_point_pair_dis;
     int j;
-    for( i = 0; i < gt_num; i++ ){
+    for( i = 0; i < prior_point_num; i++ ){
         min_point_pair_dis = 99.9;
         for( j = 0; j < neighbor_point_num; j++ ){
             tmp_dis = ( pow(prior_points[i*3 + 0] - neighbor_points[j*3 + 0], 2) +
@@ -105,14 +118,18 @@ void get_hausdorff_dis_kernel_launcher_fast(const float* whole_points, const flo
     // dim3 threads(THREADS_PER_BLOCK);
     // ball_query_kernel_fast<<<blocks, threads, 0, stream>>>(b, n, m, radius, nsample, new_xyz, xyz, idx);
 
-    dim3 blocks(DIVUP(keypoint_num, THREADS_PER_BLOCK), batch_size);
-    dim3 threads(DIVUP(THREADS_PER_BLOCK, gt_num), gt_num);
+    // dim3 blocks(DIVUP(keypoint_num*gt_num, THREADS_PER_BLOCK), batch_size);
+    // dim3 threads(gt_num, DIVUP(THREADS_PER_BLOCK, gt_num));
+    dim3 blocks(keypoint_num/16, batch_size);
+    dim3 threads(gt_num, 16);
 
+    printf("get_hausdorff_dis_kernel_fast\n");
     get_hausdorff_dis_kernel_fast<<<blocks, threads, 0, stream>>>(
         whole_points, keypoints, neighbor_points, features, radius, batch_size, whole_point_num,
         keypoint_num, neighbor_point_num, prior_points, dis_dicts, voxel_len, stream);
 
-    // cudaDeviceSynchronize();  // for using printf in kernel function
+    printf("END get_hausdorff_dis_kernel_fast\n");
+    cudaDeviceSynchronize();  // for using printf in kernel function
     err = cudaGetLastError();
     if (cudaSuccess != err) {
         fprintf(stderr, "CUDA kernel failed : %s\n", cudaGetErrorString(err));
