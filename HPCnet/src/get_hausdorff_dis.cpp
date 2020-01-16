@@ -12,15 +12,12 @@ extern THCState *state;
 #define CHECK_INPUT(x) CHECK_CUDA(x);CHECK_CONTIGUOUS(x)
 
 
-int get_hausdorff_dis_wrapper_fast(at::Tensor whole_points_tensor, at::Tensor keypoints_tensor,
-                                   at::Tensor neighbor_points_tensor,
+int get_hausdorff_dis_wrapper_fast(at::Tensor neighbor_points_tensor,
                                    at::Tensor features_tensor, float radius,
                                    int batch_size, int whole_point_num,
                                    int keypoint_num, int neighbor_point_num,
                                    at::Tensor prior_points_tensor, at::Tensor dis_dicts_tensor,
                                    float voxel_len){
-    CHECK_INPUT(whole_points_tensor);
-    CHECK_INPUT(keypoints_tensor);
     CHECK_INPUT(neighbor_points_tensor);
     CHECK_INPUT(features_tensor);
     // CHECK_INPUT(prior_points_tensor);

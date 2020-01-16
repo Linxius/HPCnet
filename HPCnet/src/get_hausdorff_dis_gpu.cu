@@ -10,9 +10,7 @@
 #define dict_grid_num (voxel_dim*voxel_dim*voxel_dim)
 #define prior_point_num 10
 
-__global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_points,
-                                              const float *__restrict__ keypoints,
-                                              const float *__restrict__ neighbor_points,
+__global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ neighbor_points,
                                               float *__restrict__ features, float radius,
                                               int batch_size, int whole_point_num,
                                               int keypoint_num, int neighbor_point_num,
@@ -81,8 +79,7 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_po
     }
 }
 
-void get_hausdorff_dis_kernel_launcher_fast(const float* whole_points, const float* keypoints,
-                                            const float*  neighbor_points,
+void get_hausdorff_dis_kernel_launcher_fast(const float*  neighbor_points,
                                             float* features, float radius,
                                             int batch_size, int whole_point_num, int keypoint_num,
                                             int neighbor_point_num,
