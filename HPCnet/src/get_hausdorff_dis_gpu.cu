@@ -28,7 +28,61 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_po
     //     features: batch_size Nshapes point_num
 
     // dim3 blocks(DIVUP(point_num, THREADS_PER_BLOCK), batch_size);  // blockIdx.x(col), blockIdx.y(row)
+    // dim3 threads(THREADS_PER_BLOCK);
+    int batch_idx = blockIdx.y;
+    int point_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    neighbor_points += batch_idx * keypoint_num * neighbor_point_num * 3 + point_idx * neighbor_point_num * 3;
+    features += batch_idx * keypoint_num * gt_num + point_idx * gt_num;
+
+    float to_prior_dis = 0;
+    float tmp_dis;
+    int xth, yth, zth;
+    int i, j;
+    int prior_hash_idx;
+    float prior_to_dis = 0;
+    float min_point_pair_dis = radius;
+    float hsdf_dis = radius;
+    for(int gt_idx = 0; gt_idx < gt_num; gt_idx++ ){
+        to_prior_dis = 0;
+        for( i = 0; i < neighbor_point_num; i++ ){
+            xth = floor(abs(neighbor_points[i*3 + 0] + radius) / voxel_len);
+            yth = floor(abs(neighbor_points[i*3 + 1] + radius) / voxel_len);
+            zth = floor(abs(neighbor_points[i*3 + 2] + radius) / voxel_len);
+            prior_hash_idx = xth + yth * voxel_dim + zth * voxel_dim * voxel_dim;
+            tmp_dis = dis_dicts[gt_idx*dict_grid_num + prior_hash_idx];
+            if( to_prior_dis < tmp_dis ){
+                to_prior_dis = tmp_dis;
+            }
+        }
+
+        prior_to_dis = 0;
+        for( i = 0; i < prior_point_num; i++ ){
+            min_point_pair_dis = 99.9;
+            for( j = 0; j < neighbor_point_num; j++ ){
+                tmp_dis = ( pow(prior_points[gt_idx*prior_point_num*3 + i*3 + 0]
+                                - neighbor_points[j*3 + 0], 2) +
+                            pow(prior_points[gt_idx*prior_point_num*3 + i*3 + 1]
+                                - neighbor_points[j*3 + 1], 2) +
+                            pow(prior_points[gt_idx*prior_point_num*3 + i*3 + 2]
+                                - neighbor_points[j*3 + 2], 2) );
+                if( min_point_pair_dis > tmp_dis ){
+                    min_point_pair_dis = tmp_dis;
+                }
+            }
+            if( min_point_pair_dis > prior_to_dis ){
+                prior_to_dis = min_point_pair_dis;
+            }
+        }
+        prior_to_dis = sqrt(prior_to_dis);
+
+        hsdf_dis = prior_to_dis > to_prior_dis? prior_to_dis : to_prior_dis;
+        features[gt_idx]  = hsdf_dis > radius? 0 : (radius-hsdf_dis) / radius;
+    }
+    // dim3 blocks(DIVUP(point_num, THREADS_PER_BLOCK), batch_size);  // blockIdx.x(col), blockIdx.y(row)
     // dim3 threads(gt_num, DIVUP(THREADS_PER_BLOCK, gt_num));
+
+    /*
     int batch_idx = blockIdx.y;
     int point_idx = blockIdx.x * blockDim.y + threadIdx.y;
     int gt_idx = threadIdx.x;
@@ -64,7 +118,7 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_po
     float prior_to_dis = 0;
     float min_point_pair_dis;
     int j;
-    for( i = 0; i < gt_num; i++ ){
+    for( i = 0; i < prior_point_num; i++ ){
         min_point_pair_dis = 99.9;
         for( j = 0; j < neighbor_point_num; j++ ){
             tmp_dis = ( pow(prior_points[i*3 + 0] - neighbor_points[j*3 + 0], 2) +
@@ -82,6 +136,7 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ whole_po
 
     float hsdf_dis = prior_to_dis > to_prior_dis? prior_to_dis : to_prior_dis;
     *features  = hsdf_dis > radius? 0 : (radius-hsdf_dis) / radius;
+    */
 }
 
 void get_hausdorff_dis_kernel_launcher_fast(const float* whole_points, const float* keypoints,
@@ -101,12 +156,12 @@ void get_hausdorff_dis_kernel_launcher_fast(const float* whole_points, const flo
 
     cudaError_t err;
 
-    // dim3 blocks(DIVUP(point_num, THREADS_PER_BLOCK), b);  // blockIdx.x(col), blockIdx.y(row)
-    // dim3 threads(THREADS_PER_BLOCK);
+    dim3 blocks(DIVUP(keypoint_num, THREADS_PER_BLOCK), batch_size);  // blockIdx.x(col), blockIdx.y(row)
+    dim3 threads(THREADS_PER_BLOCK);
     // ball_query_kernel_fast<<<blocks, threads, 0, stream>>>(b, n, m, radius, nsample, new_xyz, xyz, idx);
 
-    dim3 blocks(DIVUP(keypoint_num, THREADS_PER_BLOCK), batch_size);
-    dim3 threads(gt_num, DIVUP(THREADS_PER_BLOCK, gt_num));
+    // dim3 blocks(DIVUP(keypoint_num, THREADS_PER_BLOCK), batch_size);
+    // dim3 threads(gt_num, DIVUP(THREADS_PER_BLOCK, gt_num));
 
     get_hausdorff_dis_kernel_fast<<<blocks, threads, 0, stream>>>(
         whole_points, keypoints, neighbor_points, features, radius, batch_size, whole_point_num,
