@@ -99,7 +99,7 @@ void get_hausdorff_dis_kernel_launcher_fast(const float*  neighbor_points,
     dim3 threads(THREADS_PER_BLOCK);
 
     get_hausdorff_dis_kernel_fast<<<blocks, threads, 0, stream>>>(
-        whole_points, keypoints, neighbor_points, features, radius, batch_size, whole_point_num,
+        neighbor_points, features, radius, batch_size, whole_point_num,
         keypoint_num, neighbor_point_num, prior_points, dis_dicts, voxel_len, stream);
 
     // cudaDeviceSynchronize();  // for using printf in kernel function
