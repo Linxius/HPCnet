@@ -98,6 +98,7 @@ def train_one_epoch(model, train_loader, optimizer, epoch, lr_scheduler, total_i
 
         log_print('training epoch %d: it=%d/%d, total_it=%d, loss=%.5f, fg_iou=%.3f, lr=%f' %
                   (epoch, it, len(train_loader), total_it, loss.item(), iou.item(), cur_lr), log_f=log_f)
+        lr_scheduler.step(epoch)
 
     return total_it
 
@@ -172,7 +173,7 @@ def train_and_eval(model, train_loader, eval_loader, tb_log, ckpt_dir, log_f):
 
     total_it = 0
     for epoch in range(1, args.epochs + 1):
-        lr_scheduler.step(epoch)
+        #lr_scheduler.step(epoch)
         total_it = train_one_epoch(model, train_loader, optimizer, epoch, lr_scheduler, total_it, tb_log, log_f)
 
         if epoch % args.ckpt_save_interval == 0:
