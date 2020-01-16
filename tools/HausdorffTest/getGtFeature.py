@@ -51,16 +51,16 @@ class getGtFeature(Function):
                                             prior_points, dis_dicts,\
                                             voxel_len)
 
-        with open("./output/keypoints.txt", 'a') as keypoints_file:
-            np.savetxt(keypoints_file, keypoints[0,200:256,:].cpu().detach().numpy())
-        with open("./output/neighbor_points.txt", 'a') as neighbor_points_file:
-            for i in range(200, 256):
-                np.savetxt(neighbor_points_file, neighbor_points[0,i,:,:].cpu().detach().numpy())
-        with open("./output/feature.txt", 'a') as feature_file:
-            np.savetxt(feature_file, feature[0,200:256,:].cpu().detach().numpy())
+        # with open("./output/keypoints.txt", 'a') as keypoints_file:
+        #     np.savetxt(keypoints_file, keypoints[0,200:256,:].cpu().detach().numpy())
+        # with open("./output/neighbor_points.txt", 'a') as neighbor_points_file:
+        #     for i in range(200, 256):
+        #         np.savetxt(neighbor_points_file, neighbor_points[0,i,:,:].cpu().detach().numpy())
+        # with open("./output/feature.txt", 'a') as feature_file:
+        #     np.savetxt(feature_file, feature[0,200:256,:].cpu().detach().numpy())
 
-        # print(feature[0,100:120,:])
-        # import pdb; pdb.set_trace()
+        # # print(feature[0,100:120,:])
+        # # import pdb; pdb.set_trace()
         return feature
 
     # @staticmethod
