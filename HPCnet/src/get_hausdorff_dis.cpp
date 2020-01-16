@@ -22,8 +22,6 @@ int get_hausdorff_dis_wrapper_fast(at::Tensor neighbor_points_tensor,
     CHECK_INPUT(features_tensor);
     // CHECK_INPUT(prior_points_tensor);
     // CHECK_INPUT(dis_dicts_tensor);
-    const float *whole_points = whole_points_tensor.data<float>();
-    const float *keypoints = keypoints_tensor.data<float>();
     const float *neighbor_points = neighbor_points_tensor.data<float>();
     const float *prior_points = prior_points_tensor.data<float>();
     const float *dis_dicts = dis_dicts_tensor.data<float>();
@@ -31,7 +29,7 @@ int get_hausdorff_dis_wrapper_fast(at::Tensor neighbor_points_tensor,
 
     cudaStream_t stream = THCState_getCurrentStream(state);
     // ball_query_kernel_launcher_fast(b, n, m, radius, nsample, new_xyz, xyz, idx, stream);
-    get_hausdorff_dis_kernel_launcher_fast(whole_points, keypoints, neighbor_points, features,
+    get_hausdorff_dis_kernel_launcher_fast(neighbor_points, features,
                                            radius, batch_size,
                                            whole_point_num, keypoint_num, neighbor_point_num,
                                            prior_points, dis_dicts, voxel_len, stream);
