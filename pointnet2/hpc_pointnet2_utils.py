@@ -256,21 +256,24 @@ class HPC_Group(nn.Module):
         if (grouped_xyz > self.radius).any():
             print("ERROR: 领域点出错")
 
-        points = xyz.transpose(1,2)
-        keypoints = new_xyz.transpose(1, 2)
-        gtfeatures = get_gt_feature(points, keypoints, grouped_xyz.permute(3,0,1,2), self.radius) #torch.Size([8, 42, 4096])
+        gtfeatures = get_gt_feature(xyz, new_xyz, \
+                                    grouped_xyz.permute(0,2,3,1).contiguous(),\
+                                    self.radius, self.nsample).transpose(1,2) # 8 42 4096
 
         if features is not None:
             grouped_features = grouping_operation(features, idx)
             if self.use_xyz:
-                new_features = torch.cat([grouped_xyz[:,:,:,0], gtfeatures, grouped_features[:,:,:,0]], dim=1)  # (B, C + 3, npoint, nsample)
+                new_features = torch.cat([grouped_xyz[:,:,:,0], \
+                                          gtfeatures, grouped_features[:,:,:,0]], \
+                                         dim=1)  # (B, C + 3, npoint, nsample)
             else:
                 # new_features = grouped_features
-                new_features = torch.cat([gtfeatures, grouped_features], dim=1)  # (B, C + 3, npoint, nsample)
+                new_features = torch.cat([gtfeatures, \
+                                          grouped_features], dim=1)  # (B, C + 3, npoint, nsample)
         else:
             assert self.use_xyz, "Cannot have not features and not use xyz as a feature!"
-            new_features = torch.cat([grouped_xyz[:,:,:,0], gtfeatures], dim=1)  # (B, C + 3, npoint, nsample)
-
+            new_features = torch.cat([grouped_xyz[:,:,:,0], \
+                                      gtfeatures], dim=1)  # (B, C + 3, npoint, nsample)
         return new_features
 
 class QueryAndGroup(nn.Module):
