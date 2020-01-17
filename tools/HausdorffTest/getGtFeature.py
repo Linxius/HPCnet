@@ -25,7 +25,6 @@ class getGtFeature(Function):
         neighbor_points: B N nsample C
         output: feature: B M gt_num
         """
-        print(whole_points[:,:,:].size())
         root = "./HausdorffTest/shapes/" + str(radius)
         prior_points, dis_dicts = LoadGivenShapes(root)
 
