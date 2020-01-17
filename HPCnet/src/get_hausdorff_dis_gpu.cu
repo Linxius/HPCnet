@@ -74,8 +74,8 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ neighbor
         }
         prior_to_dis = sqrt(prior_to_dis);
 
-        hsdf_dis = prior_to_dis > to_prior_dis? prior_to_dis : to_prior_dis;
-        features[gt_idx]  = hsdf_dis > radius? 0 : (radius-hsdf_dis) / radius;
+        hsdf_dis = (prior_to_dis > to_prior_dis? prior_to_dis : to_prior_dis) / radius;
+        features[gt_idx] = (hsdf_dis > 1? 1: hsdf_dis) < 0.1? 0: hsdf_dis;
     }
 }
 
