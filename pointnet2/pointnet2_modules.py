@@ -95,8 +95,8 @@ class HPC_SAModuleMSG(_PointnetSAModuleBase):
             )
             mlp_spec = mlps[i]
             if use_xyz:
-                # mlp_spec[0] += 3
-                mlp_spec[0] += 45
+                mlp_spec[0] += 3
+                # mlp_spec[0] += 45
 
             self.mlps.append(pt_utils.SharedMLP(mlp_spec, bn=bn, instance_norm=instance_norm))
         self.pool_method = pool_method
