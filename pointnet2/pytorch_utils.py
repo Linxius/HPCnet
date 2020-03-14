@@ -20,8 +20,8 @@ class SharedMLP(nn.Sequential):
         for i in range(len(args) - 1):
             self.add_module(
                 name + 'layer{}'.format(i),
-                # Conv2d(
-                Conv1d(
+                Conv2d(
+                # Conv1d(
                     args[i],
                     args[i + 1],
                     bn=(not first or not preact or (i != 0)) and bn,
