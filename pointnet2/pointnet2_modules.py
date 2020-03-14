@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from . import hpc_pointnet2_utils
 from . import pytorch_utils as pt_utils
 from typing import List
-# from HausdorffTest.getGtFeature import getGtFeature, gt_feature_len
 
 
 class _PointnetSAModuleBase(nn.Module):
@@ -38,29 +37,20 @@ class _PointnetSAModuleBase(nn.Module):
 
         for i in range(len(self.groupers)):
             new_features = self.groupers[i](xyz, new_xyz, features)  # (B, C, npoint, nsample)
-            # print("new_features")
-            # print(new_features.size()) # 8 45 4096
-
-            # print(self.mlps[i]) # 64 3 1
             new_features = self.mlps[i](new_features)  # (B, mlp[-1], npoint, nsample)
-            # print(new_features.size())
-            # if self.pool_method == 'max_pool':
-            #     new_features = F.max_pool2d(
-            #         new_features, kernel_size=[1, new_features.size(3)]
-            #     )  # (B, mlp[-1], npoint, 1)
-            # elif self.pool_method == 'avg_pool':
-            #     new_features = F.avg_pool2d(
-            #         new_features, kernel_size=[1, new_features.size(3)]
-            #     )  # (B, mlp[-1], npoint, 1)
-            # else:
-            #     raise NotImplementedError
+            if self.pool_method == 'max_pool':
+                new_features = F.max_pool2d(
+                    new_features, kernel_size=[1, new_features.size(3)]
+                )  # (B, mlp[-1], npoint, 1)
+            elif self.pool_method == 'avg_pool':
+                new_features = F.avg_pool2d(
+                    new_features, kernel_size=[1, new_features.size(3)]
+                )  # (B, mlp[-1], npoint, 1)
+            else:
+                raise NotImplementedError
 
-            # new_features = F.max_pool1d( new_features, pool_size = 2)
-            # x = torch.max(x, 2, keepdim=True)[0]
             new_features = new_features.squeeze(-1)  # (B, mlp[-1], npoint)
             new_features_list.append(new_features)
-            # print(new_features.size())
-            # import pdb; pdb.set_trace()
 
         return new_xyz, torch.cat(new_features_list, dim=1)
 
@@ -94,9 +84,9 @@ class HPC_SAModuleMSG(_PointnetSAModuleBase):
                 if npoint is not None else hpc_pointnet2_utils.GroupAll(use_xyz)
             )
             mlp_spec = mlps[i]
+            mlp_spec[0] += 42
             if use_xyz:
-                # mlp_spec[0] += 3
-                mlp_spec[0] += 45
+                mlp_spec[0] += 3
 
             self.mlps.append(pt_utils.SharedMLP(mlp_spec, bn=bn, instance_norm=instance_norm))
         self.pool_method = pool_method
@@ -198,8 +188,7 @@ class PointnetFPModule(nn.Module):
             new_features = interpolated_feats
 
         new_features = new_features.unsqueeze(-1)
-        # new_features = self.mlp(new_features)
-        new_features = self.mlp(new_features[:,:,:,0])
+        new_features = self.mlp(new_features)
 
         return new_features.squeeze(-1)
 
