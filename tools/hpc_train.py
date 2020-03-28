@@ -21,7 +21,7 @@ parser.add_argument('--workers', type=int, default=4)
 parser.add_argument("--mode", type=str, default='train')
 parser.add_argument("--ckpt", type=str, default='None')
 
-parser.add_argument("--net", type=str, default='hpc_pointnet2_msg')
+parser.add_argument("--net", type=str, default='HPCnet')
 
 parser.add_argument('--lr', type=float, default=0.002)
 parser.add_argument('--lr_decay', type=float, default=0.2)
@@ -184,7 +184,7 @@ def train_and_eval(model, train_loader, eval_loader, tb_log, ckpt_dir, log_f):
 
 
 if __name__ == '__main__':
-    MODEL = importlib.import_module(args.net)  # import network module
+    MODEL = importlib.import_module(args.net+"."+args.net+"_msg")  # import network module
     model = MODEL.get_model(input_channels=0)
     model.cuda()
     ################ uncomment to use DataParallel ###########################

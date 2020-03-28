@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
-from pointnet2.pointnet2_modules import PointnetFPModule, PointnetSAModuleMSG, HPC_SAModuleMSG
+from pointnet2.pointnet2_modules import PointnetFPModule, PointnetSAModuleMSG
+from HPCnet.hpcnet_modules import HPC_SAModuleMSG
 import pointnet2.pytorch_utils as pt_utils
 
 def get_model(input_channels=0):
-    return Pointnet2MSG(input_channels=input_channels)
+    return HPCnetMSG(input_channels=input_channels)
 
 
 # NPOINTS = [4096, 1024, 256, 64]
@@ -28,7 +29,7 @@ CLS_FC = [128]
 DP_RATIO = 0.5
 
 
-class Pointnet2MSG(nn.Module):
+class HPCnetMSG(nn.Module):
     def __init__(self, input_channels=6):
         super().__init__()
 

@@ -4,12 +4,10 @@ from torch.autograd import Variable
 from torch.autograd import Function
 import torch.nn as nn
 import math
-from HausdorffTest.ReadShapes import read_keyfile
-from HausdorffTest.ReadShapes import LoadGivenShapes
-import time
+from HPCnet.ReadShapes import read_keyfile
+from HPCnet.ReadShapes import LoadGivenShapes
 import os
 import sys
-import torch.multiprocessing as mp
 
 import numpy as np
 import HPCnet_cuda as HPCnet
@@ -25,7 +23,7 @@ class getGtFeature(Function):
         neighbor_points: B N nsample C
         output: feature: B M gt_num
         """
-        root = "./HausdorffTest/shapes/" + str(radius)
+        root = "./data/shapes/" + str(radius)
         prior_points, dis_dicts = LoadGivenShapes(root)
 
         dis_dicts = torch.cuda.FloatTensor(dis_dicts)
