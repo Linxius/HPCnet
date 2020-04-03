@@ -124,7 +124,7 @@ def main(args):
     except:
         log_string('No existing model, starting training from scratch...')
         start_epoch = 0
-        # classifier = classifier.apply(weights_init)
+        classifier = classifier.apply(weights_init)
 
     if args.optimizer == 'Adam':
         optimizer = torch.optim.Adam(

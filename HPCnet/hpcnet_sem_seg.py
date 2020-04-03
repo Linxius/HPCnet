@@ -1,7 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from tools.pointnet_util import PointNetSetAbstractionMsg,PointNetFeaturePropagation
-from HPCnet.hpcnet2_modules import HPC_SAModuleMSG
+from pointnet2.pointnet_util import PointNetSetAbstractionMsg,PointNetFeaturePropagation
+# from HPCnet.hpcnet2_modules import HPC_SAModuleMSG
+from HPCnet.hpcnet2_utils import HPC_SAModuleMSG
 
 
 class get_model(nn.Module):
@@ -43,6 +44,7 @@ class get_model(nn.Module):
         x = self.conv2(x)
         x = F.log_softmax(x, dim=1)
         x = x.permute(0, 2, 1)
+        print(x.size())
         return x, l4_points
 
 
@@ -51,9 +53,9 @@ class get_loss(nn.Module):
         super(get_loss, self).__init__()
     def forward(self, pred, target, trans_feat, weight):
         total_loss = F.nll_loss(pred, target, weight=weight)
-        print(pred.size())
-        print(target.size())
-        print(weight.size())
+        # print(pred.size())
+        # print(target.size())
+        # print(weight.size())
         return total_loss
 
 if __name__ == '__main__':
