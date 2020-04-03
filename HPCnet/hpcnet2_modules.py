@@ -38,7 +38,10 @@ class _PointnetSAModuleBase(nn.Module):
         # xyz = xyz.permute(0, 2, 1).contiguous()
         # if points is not None:
         #     points = points.permute(0, 2, 1)
-        features = points[:,3:,:].contiguous()
+        if points is not None:
+            features = points[:,3:,:].contiguous()
+        else:
+            features = None
 
         new_features_list = []
 
@@ -54,7 +57,6 @@ class _PointnetSAModuleBase(nn.Module):
         new_xyz = new_xyz.contiguous()
         for i in range(len(self.groupers)):
             new_features = self.groupers[i](xyz, new_xyz.contiguous(), features)  # (B, C, npoint, nsample)
-            # import pdb; pdb.set_trace()
             new_features = self.mlps[i](new_features)  # (B, mlp[-1], npoint, nsample)
             if self.pool_method == 'max_pool':
                 new_features = F.max_pool2d(

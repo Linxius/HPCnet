@@ -37,6 +37,7 @@ class HPC_Group(nn.Module):
         gtfeatures = get_gt_feature(xyz, new_xyz, \
                                     grouped_xyz.permute(0,2,3,1).contiguous(),\
                                     self.radius, self.nsample).transpose(1,2) # 8 42 4096
+        import pdb; pdb.set_trace()
         gtfeatures = gtfeatures.unsqueeze(-1).expand(-1,-1,-1,self.nsample)
 
         if features is not None:
