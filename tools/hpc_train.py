@@ -14,6 +14,7 @@ import importlib
 import torch.distributed as dist
 
 parser = argparse.ArgumentParser(description="Arg parser")
+parser.add_argument("--dataset", type=str, default="s3dis")
 parser.add_argument("--batch_size", type=int, default=32)
 parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--ckpt_save_interval", type=int, default=1)
@@ -191,12 +192,19 @@ if __name__ == '__main__':
     # model = nn.DataParallel(model, device_ids=gpus, output_device=gpus[0])
     ##########################################################################
 
-    eval_set = KittiDataset(root_dir='./data', mode='EVAL', split='val')
+    if args.dataset == "kitti":
+        eval_set = KittiDataset(root_dir='./data', mode='EVAL', split='val')
+    elif args.data == "s3dis":
+        eval_set = KittiDataset(root_dir='./data', mode='EVAL', split='val')
+
     eval_loader = DataLoader(eval_set, batch_size=args.batch_size, shuffle=False, pin_memory=True,
                              num_workers=args.workers, collate_fn=eval_set.collate_batch)
 
     if args.mode == 'train':
-        train_set = KittiDataset(root_dir='./data', mode='TRAIN', split='train')
+        if args.dataset == "kitti":
+            train_set = KittiDataset(root_dir='./data', mode='TRAIN', split='train')
+        elif args.data == "s3dis":
+            train_set = KittiDataset(root_dir='./data', mode='TRAIN', split='train')
         train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, pin_memory=True,
                                   num_workers=args.workers, collate_fn=train_set.collate_batch)
         # output dir config
