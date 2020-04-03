@@ -8,7 +8,7 @@ import torch.optim.lr_scheduler as lr_sched
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 import tensorboard_logger as tb_log
-from dataset import KittiDataset
+from data_utils.dataset import KittiDataset
 import argparse
 import importlib
 import torch.distributed as dist
