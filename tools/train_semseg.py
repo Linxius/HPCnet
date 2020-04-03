@@ -29,12 +29,12 @@ for i,cat in enumerate(seg_classes.keys()):
 def parse_args():
     parser = argparse.ArgumentParser('Model')
     parser.add_argument('--model', type=str, default='hpcnet_sem_seg', help='model name [default: hpcnet_sem_seg]')
-    parser.add_argument('--batch_size', type=int, default=16, help='Batch Size during training [default: 16]')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch Size during training [default: 16]')
     parser.add_argument('--epoch',  default=128, type=int, help='Epoch to run [default: 128]')
     parser.add_argument('--learning_rate', default=0.001, type=float, help='Initial learning rate [default: 0.001]')
     parser.add_argument('--gpu', type=str, default='0', help='GPU to use [default: GPU 0]')
     parser.add_argument('--optimizer', type=str, default='Adam', help='Adam or SGD [default: Adam]')
-    parser.add_argument('--log_dir', type=str, default=None, help='Log path [default: None]')
+    parser.add_argument('--log_dir', type=str, default="hpcnet_semseg", help='Log path [default: None]')
     parser.add_argument('--decay_rate', type=float, default=1e-4, help='weight decay [default: 1e-4]')
     parser.add_argument('--npoint', type=int,  default=4096, help='Point Number [default: 4096]')
     parser.add_argument('--step_size', type=int,  default=10, help='Decay step for lr decay [default: every 10 epochs]')
@@ -98,7 +98,7 @@ def main(args):
     '''MODEL LOADING'''
     MODEL = importlib.import_module("HPCnet."+args.model)
     shutil.copy('HPCnet/%s.py' % args.model, str(experiment_dir))
-    shutil.copy('tools/pointnet_util.py', str(experiment_dir))
+    shutil.copy('pointnet2/pointnet_util.py', str(experiment_dir))
 
     classifier = MODEL.get_model(NUM_CLASSES).cuda()
     criterion = MODEL.get_loss().cuda()

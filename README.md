@@ -37,3 +37,22 @@ net arch in `HPCnet/hpcnet_kitti.py`
 
 ### ModelNet40
 put data in `data/modelnet40_normal_resampled`
+
+train `tools/train_cls.py`
+
+test `tools/test_cls.py`
+
+net in `HPCnet/hpcnet_cls_msg.py`
+
+### S3DIS
+data: `data/Stanford3dDataset_v1.2_Aligned_Version/
+
+```
+cd data_utils
+python collect_indoor3d_data.py
+```
+
+```
+python tools/train_semseg.py --model pointnet2_sem_seg --test_area 5
+python tools/test_semseg.py --log_dir pointnet2_sem_seg --test_area 5 --visual
+```

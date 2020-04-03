@@ -5,6 +5,7 @@ from pointnet2.pointnet_util import PointNetSetAbstractionMsg,PointNetFeaturePro
 from HPCnet.hpcnet2_utils import HPC_SAModuleMSG
 
 
+
 class get_model(nn.Module):
     def __init__(self, num_classes):
         super(get_model, self).__init__()
@@ -44,7 +45,6 @@ class get_model(nn.Module):
         x = self.conv2(x)
         x = F.log_softmax(x, dim=1)
         x = x.permute(0, 2, 1)
-        print(x.size())
         return x, l4_points
 
 

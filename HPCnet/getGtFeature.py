@@ -45,7 +45,7 @@ class getGtFeature(Function):
                                             prior_points, dis_dicts,\
                                             voxel_len)
 
-        return feature
+        return 1-feature
 
     # @staticmethod
     # def backward(feature, a = None):

@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from time import time
 import numpy as np
+from HPCnet.getGtFeature import get_gt_feature
 
 def timeit(tag, t):
     print("{}: {}s".format(tag, time() - t))
@@ -207,9 +208,9 @@ class PointNetSetAbstraction(nn.Module):
         return new_xyz, new_points
 
 
-class PointNetSetAbstractionMsg(nn.Module):
+class HPC_SAModuleMSG(nn.Module):
     def __init__(self, npoint, radius_list, nsample_list, in_channel, mlp_list):
-        super(PointNetSetAbstractionMsg, self).__init__()
+        super(HPC_SAModuleMSG, self).__init__()
         self.npoint = npoint
         self.radius_list = radius_list
         self.nsample_list = nsample_list
@@ -218,7 +219,7 @@ class PointNetSetAbstractionMsg(nn.Module):
         for i in range(len(mlp_list)):
             convs = nn.ModuleList()
             bns = nn.ModuleList()
-            last_channel = in_channel + 3
+            last_channel = in_channel + 3 + 42
             for out_channel in mlp_list[i]:
                 convs.append(nn.Conv2d(last_channel, out_channel, 1))
                 bns.append(nn.BatchNorm2d(out_channel))
@@ -254,7 +255,12 @@ class PointNetSetAbstractionMsg(nn.Module):
             else:
                 grouped_points = grouped_xyz
 
+            hpcfeatures = get_gt_feature(xyz, new_xyz, grouped_xyz, radius, K) # B N C
+            hpcfeatures = hpcfeatures.unsqueeze(-1).expand(-1,-1,-1,K).permute(0, 2, 3, 1)
+
             grouped_points = grouped_points.permute(0, 3, 2, 1)  # [B, D, K, S]
+            # import pdb; pdb.set_trace()
+            grouped_points = torch.cat([grouped_points, hpcfeatures], dim=1)
             for j in range(len(self.conv_blocks[i])):
                 conv = self.conv_blocks[i][j]
                 bn = self.bn_blocks[i][j]
@@ -318,4 +324,3 @@ class PointNetFeaturePropagation(nn.Module):
             bn = self.mlp_bns[i]
             new_points = F.relu(bn(conv(new_points)))
         return new_points
-
