@@ -7,6 +7,7 @@ from pointnet2 import pointnet2_utils
 from pointnet2 import pytorch_utils as pt_utils
 from typing import List
 
+HPC_FEATURES_LEN = 42
 
 class _PointnetSAModuleBase(nn.Module):
 
@@ -17,6 +18,7 @@ class _PointnetSAModuleBase(nn.Module):
         self.mlps = None
         self.pool_method = 'max_pool'
         self.new_xyz = None
+        self.mlps_w = None
 
     def forward(self, xyz: torch.Tensor, features: torch.Tensor = None, new_xyz=None) -> (torch.Tensor, torch.Tensor):
         """
@@ -38,6 +40,17 @@ class _PointnetSAModuleBase(nn.Module):
 
         for i in range(len(self.groupers)):
             new_features = self.groupers[i](xyz, new_xyz, features)  # (B, C, npoint, nsample)
+            new_feature = new_features[:,:-HPC_FEATURES_LEN,:,:]
+            """
+            :param xyz: (B, N, 3) xyz coordinates of the features
+            :param new_xyz: (B, npoint, 3) centroids
+            :param features: (B, C, N) descriptors of the features
+            :return:
+                new_features: (B, 3 + C, npoint, nsample)
+            """
+            new_feature_w = self.mlps_w[i](new_features)  # (B, mlp[-1], npoint, nsample)
+            new_features = new_feature*(1+new_feature_w)
+
             new_features = self.mlps[i](new_features)  # (B, mlp[-1], npoint, nsample)
             if self.pool_method == 'max_pool':
                 new_features = F.max_pool2d(
@@ -77,6 +90,7 @@ class HPC_SAModuleMSG(_PointnetSAModuleBase):
         self.npoint = npoint
         self.groupers = nn.ModuleList()
         self.mlps = nn.ModuleList()
+        self.mlps_w = nn.ModuleList()
         for i in range(len(radii)):
             radius = radii[i]
             nsample = nsamples[i]
@@ -84,12 +98,20 @@ class HPC_SAModuleMSG(_PointnetSAModuleBase):
                 hpcnet_utils.HPC_Group(radius, nsample, use_xyz=use_xyz)
                 if npoint is not None else pointnet2_utils.GroupAll(use_xyz)
             )
+            # mlp_spec = mlps[i]
+            # mlp_spec[0] += 42
+            # if use_xyz:
+            #     mlp_spec[0] += 3
+            # self.mlps.append(pt_utils.SharedMLP(mlp_spec, bn=bn, instance_norm=instance_norm))
+
             mlp_spec = mlps[i]
-            mlp_spec[0] += 42
             if use_xyz:
                 mlp_spec[0] += 3
-
             self.mlps.append(pt_utils.SharedMLP(mlp_spec, bn=bn, instance_norm=instance_norm))
+            mlp_spec[-1] = mlp_spec[0]
+            # mlp_spec[0] += 42 + nsample*3
+            mlp_spec[0] += 42
+            self.mlps_w.append(pt_utils.SharedMLP(mlp_spec, bn=bn, instance_norm=instance_norm))
         self.pool_method = pool_method
 
 

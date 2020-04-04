@@ -19,6 +19,8 @@ class HPC_Group(nn.Module):
         """
         super().__init__()
         self.radius, self.nsample, self.use_xyz = radius, nsample, use_xyz
+        self.conv_blocks = nn.ModuleList()
+        self.bn_blocks = nn.ModuleList()
 
     def forward(self, xyz: torch.Tensor, new_xyz: torch.Tensor, features: torch.Tensor = None) -> Tuple[torch.Tensor]:
         """
