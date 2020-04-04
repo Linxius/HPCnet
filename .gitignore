@@ -2,6 +2,7 @@ log
 shapes*
 .ipynb_checkpoints/
 data/
+!data/KITTI/ImageSets/
 output
 object
 *.pyc
