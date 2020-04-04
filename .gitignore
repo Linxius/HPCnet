@@ -1,6 +1,7 @@
+log
 shapes*
 .ipynb_checkpoints/
-data
+data/
 output
 object
 *.pyc

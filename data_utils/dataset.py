@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import torch.utils.data as torch_data
-import kitti_utils
+from data_utils import kitti_utils
 import cv2
 from PIL import Image
 

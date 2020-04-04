@@ -8,20 +8,20 @@ import torch.optim.lr_scheduler as lr_sched
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 import tensorboard_logger as tb_log
-from dataset import KittiDataset
+from data_utils.dataset import KittiDataset
 import argparse
 import importlib
 import torch.distributed as dist
 
 parser = argparse.ArgumentParser(description="Arg parser")
-parser.add_argument("--batch_size", type=int, default=32)
+parser.add_argument("--batch_size", type=int, default=16)
 parser.add_argument("--epochs", type=int, default=100)
-parser.add_argument("--ckpt_save_interval", type=int, default=1)
+parser.add_argument("--ckpt_save_interval", type=int, default=5)
 parser.add_argument('--workers', type=int, default=4)
 parser.add_argument("--mode", type=str, default='train')
 parser.add_argument("--ckpt", type=str, default='None')
 
-parser.add_argument("--net", type=str, default='hpc_pointnet2_msg')
+parser.add_argument("--net", type=str, default='hpcnet')
 
 parser.add_argument('--lr', type=float, default=0.002)
 parser.add_argument('--lr_decay', type=float, default=0.2)
@@ -184,7 +184,7 @@ def train_and_eval(model, train_loader, eval_loader, tb_log, ckpt_dir, log_f):
 
 
 if __name__ == '__main__':
-    MODEL = importlib.import_module(args.net)  # import network module
+    MODEL = importlib.import_module("HPCnet."+args.net+"_kitti")  # import network module
     model = MODEL.get_model(input_channels=0)
     model.cuda()
     ################ uncomment to use DataParallel ###########################
@@ -192,6 +192,7 @@ if __name__ == '__main__':
     ##########################################################################
 
     eval_set = KittiDataset(root_dir='./data', mode='EVAL', split='val')
+
     eval_loader = DataLoader(eval_set, batch_size=args.batch_size, shuffle=False, pin_memory=True,
                              num_workers=args.workers, collate_fn=eval_set.collate_batch)
 
