@@ -45,7 +45,8 @@ test `tools/test_cls.py`
 net in `HPCnet/hpcnet_cls_msg.py`
 
 ### S3DIS
-data: `data/Stanford3dDataset_v1.2_Aligned_Version/`
+data:
+`s3dis/Stanford3dDataset_v1.2_Aligned_Version`
 
 ```
 cd data_utils
