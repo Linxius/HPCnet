@@ -78,7 +78,7 @@ def main(args):
 
     '''MODEL LOADING'''
     model_name = os.listdir(experiment_dir+'/logs')[0].split('.')[0]
-    MODEL = importlib.import_module(model_name)
+    MODEL = importlib.import_module("HPCnet."+model_name)
     classifier = MODEL.get_model(NUM_CLASSES).cuda()
     checkpoint = torch.load(str(experiment_dir) + '/checkpoints/best_model.pth')
     classifier.load_state_dict(checkpoint['model_state_dict'])

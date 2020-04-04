@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device')
     parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
     parser.add_argument('--log_dir', type=str, default='hpcnet_cls', help='Experiment root')
-    parser.add_argument('--normal', action='store_true', default=True, help='Whether to use normal information [default: False]')
+    parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normal information [default: False]')
     parser.add_argument('--num_votes', type=int, default=3, help='Aggregate classification scores with voting [default: 3]')
     return parser.parse_args()
 
@@ -87,7 +87,7 @@ def main(args):
     '''MODEL LOADING'''
     num_class = 40
     model_name = os.listdir(experiment_dir+'/logs')[0].split('.')[0]
-    MODEL = importlib.import_module(model_name)
+    MODEL = importlib.import_module("HPCnet."+model_name)
 
     classifier = MODEL.get_model(num_class,normal_channel=args.normal).cuda()
 
