@@ -1,13 +1,6 @@
 # HPCnet
 
-<!-- * PyTorch implementation of [PointNet++](https://arxiv.org/abs/1706.02413) based on [erikwijmans/Pointnet2_PyTorch](https://github.com/erikwijmans/Pointnet2_PyTorch). -->
-<!-- * Faster than the original codes by re-implementing the CUDA operations.  -->
-
 ## Installation
-### Requirements
-* Linux (tested on Ubuntu 14.04/16.04)
-* Python 3.6+
-* PyTorch 1.0
 
 ### Install
 Install this library by running the following command:
@@ -16,38 +9,51 @@ Install this library by running the following command:
 cd pointnet2
 python setup.py install
 cd ../
+
+cd HPCnet
+python setup.py install
+cd ../
 ```
 
 ## Examples
-<!-- Here I provide a simple example to use this library in the task of KITTI ourdoor foreground point cloud segmentation, and you could refer to the paper [PointRCNN](https://arxiv.org/abs/1812.04244) for the details of task description and foreground label generation. -->
 
-1. Download the training data from [KITTI 3D object detection](http://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=3d) website and organize the downloaded files as follows:
+### KITTI
+data:
 ```
-Pointnet2.PyTorch
-├── pointnet2
-├── tools
-│   ├──data
-│   │  ├── KITTI
-│   │  │   ├── ImageSets
-│   │  │   ├── object
-│   │  │   │   ├──training
-│   │  │   │      ├──calib & velodyne & label_2 & image_2
-│   │  train_and_eval.py
+ ├──data
+ │  ├── KITTI
+ │  │   ├── ImageSets
+ │  │   ├── object
+ │  │   │   ├──training
+ │  │   │      ├──calib & velodyne & label_2 & image_2
 ```
 
-2. Run the following command to train and evaluate:
-```shell
-cd tools
-python train_and_eval.py --batch_size 8 --epochs 100 --ckpt_save_interval 2
-python hpc_train.py --batch_size 8 --epochs 25 --ckpt_save_interval 1 --mode train
+train and test:
+```
+python tools/kitti_train_test.py
 ```
 
+net arch in `HPCnet/hpcnet_kitti.py`
 
+### ModelNet40
+put data in `data/modelnet40_normal_resampled`
 
-<!-- ## Project using this repo: -->
-<!-- * [PointRCNN](https://github.com/sshaoshuai/PointRCNN): 3D object detector from raw point cloud. -->
+train `tools/train_cls.py`
 
-## Acknowledgement
-* [charlesq34/pointnet2](https://github.com/charlesq34/pointnet2)
-* [erikwijmans/Pointnet2_PyTorch](https://github.com/erikwijmans/Pointnet2_PyTorch): Initial work of PyTorch implementation of PointNet++.
-* [sshaoshuai/Pointnet2.PyTorch](https://github.com/sshaoshuai/Pointnet2.PyTorch)
+test `tools/test_cls.py`
+
+net in `HPCnet/hpcnet_cls_msg.py`
+
+### S3DIS
+data:
+`s3dis/Stanford3dDataset_v1.2_Aligned_Version`
+
+```
+cd data_utils
+python collect_indoor3d_data.py
+```
+
+```
+python tools/train_semseg.py --model pointnet2_sem_seg --test_area 5
+python tools/test_semseg.py --log_dir pointnet2_sem_seg --test_area 5 --visual
+```

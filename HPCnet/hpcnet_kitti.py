@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
-from pointnet2.pointnet2_modules import PointnetFPModule, PointnetSAModuleMSG, HPC_SAModuleMSG
+from pointnet2.pointnet2_modules import PointnetFPModule, PointnetSAModuleMSG
+from HPCnet.hpcnet_modules import HPC_SAModuleMSG
 import pointnet2.pytorch_utils as pt_utils
 
 def get_model(input_channels=0):
-    return Pointnet2MSG(input_channels=input_channels)
+    return HPCnetMSG(input_channels=input_channels)
 
 
 # NPOINTS = [4096, 1024, 256, 64]
@@ -18,7 +19,7 @@ def get_model(input_channels=0):
 
 NPOINTS = [4096, 1024, 256]
 RADIUS = [[0.4, 0.8], [0.6, 1.0], [0.8, 1.2] ]
-NSAMPLE = [[16, 32], [16, 32], [16, 32]]
+NSAMPLE = [[8, 16], [8, 16], [8, 16]]
 # MLPS = [[[64, 64, 128], [64, 64, 128]], [[256 + 64, 256+64, 512], [320, 320, 512]], [[1024, 1024, 1024], [1024, 1024, 1024]]]
 MLPS = [[[45, 45, 64], [45, 45, 64]], [[192, 192, 256], [192, 192, 256]], [[320, 320, 512],[320, 320, 512]]]
 # MLPS = [[[16, 16, 32], [32, 32, 64]], [[64, 64, 128], [64, 96, 128]],
@@ -28,7 +29,7 @@ CLS_FC = [128]
 DP_RATIO = 0.5
 
 
-class Pointnet2MSG(nn.Module):
+class HPCnetMSG(nn.Module):
     def __init__(self, input_channels=6):
         super().__init__()
 
