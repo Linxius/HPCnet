@@ -12,6 +12,7 @@ from tqdm import tqdm
 import provider
 import numpy as np
 import time
+import torch.distributed as dist
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = BASE_DIR
@@ -40,6 +41,8 @@ def parse_args():
     parser.add_argument('--step_size', type=int,  default=10, help='Decay step for lr decay [default: every 10 epochs]')
     parser.add_argument('--lr_decay', type=float,  default=0.7, help='Decay rate for lr decay [default: 0.7]')
     parser.add_argument('--test_area', type=int, default=5, help='Which area to use for test, option: 1-6 [default: 5]')
+    parser.add_argument('--local_rank', default=-1, type=int,
+                                help='node rank for distributed training')
 
     return parser.parse_args()
 
@@ -49,7 +52,7 @@ def main(args):
         print(str)
 
     '''HYPER PARAMETER'''
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    #os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     '''CREATE DIR'''
     timestr = str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M'))
@@ -84,12 +87,15 @@ def main(args):
     NUM_POINT = args.npoint
     BATCH_SIZE = args.batch_size
 
+    dist.init_process_group(backend='nccl')
     print("start loading training data ...")
     TRAIN_DATASET = S3DISDataset(split='train', data_root=root, num_point=NUM_POINT, test_area=args.test_area, block_size=1.0, sample_rate=1.0, transform=None)
     print("start loading test data ...")
     TEST_DATASET = S3DISDataset(split='test', data_root=root, num_point=NUM_POINT, test_area=args.test_area, block_size=1.0, sample_rate=1.0, transform=None)
-    trainDataLoader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True, drop_last=True, worker_init_fn = lambda x: np.random.seed(x+int(time.time())))
-    testDataLoader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=BATCH_SIZE, shuffle=False, num_workers=4, pin_memory=True, drop_last=True)
+    train_sampler = torch.utils.data.distributed.DistributedSampler(TRAIN_DATASET)
+    test_sampler = torch.utils.data.distributed.DistributedSampler(TEST_DATASET)
+    trainDataLoader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=BATCH_SIZE, shuffle=False, sampler=train_sampler, num_workers=4, pin_memory=True, drop_last=True, worker_init_fn = lambda x: np.random.seed(x+int(time.time())))
+    testDataLoader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=BATCH_SIZE, shuffle=False, sampler=test_sampler, num_workers=4, pin_memory=True, drop_last=True)
     weights = torch.Tensor(TRAIN_DATASET.labelweights).cuda()
 
     log_string("The number of training data is: %d" % len(TRAIN_DATASET))
@@ -100,7 +106,9 @@ def main(args):
     shutil.copy('HPCnet/%s.py' % args.model, str(experiment_dir))
     shutil.copy('pointnet2/pointnet_util.py', str(experiment_dir))
 
+    torch.cuda.set_device(args.local_rank)
     classifier = MODEL.get_model(NUM_CLASSES).cuda()
+    classifier = torch.nn.parallel.DistributedDataParallel(classifier, device_ids=[args.local_rank])
     criterion = MODEL.get_loss().cuda()
 
     def weights_init(m):
@@ -161,15 +169,16 @@ def main(args):
         total_correct = 0
         total_seen = 0
         loss_sum = 0
-        for i, data in tqdm(enumerate(trainDataLoader), total=len(trainDataLoader), smoothing=0.9):
+        #for i, data in tqdm(enumerate(trainDataLoader), total=len(trainDataLoader), smoothing=0.9):
+        for i, data in enumerate(trainDataLoader):
             points, target = data
             points = points.data.numpy()
             points[:,:, :3] = provider.rotate_point_cloud_z(points[:,:, :3])
             points = torch.Tensor(points)
-            points, target = points.float().cuda(),target.long().cuda()
+            points, target = points.float().cuda(non_blocking=True),target.long().cuda(non_blocking=True)
             points = points.transpose(2, 1)
             optimizer.zero_grad()
-            classifier = classifier.train()
+            #classifier = classifier.train()
             seg_pred, trans_feat = classifier(points)
             seg_pred = seg_pred.contiguous().view(-1, NUM_CLASSES)
             batch_label = target.view(-1, 1)[:, 0].cpu().data.numpy()
@@ -214,7 +223,7 @@ def main(args):
                 points = torch.Tensor(points)
                 points, target = points.float().cuda(), target.long().cuda()
                 points = points.transpose(2, 1)
-                classifier = classifier.eval()
+                #classifier = classifier.eval()
                 seg_pred, trans_feat = classifier(points)
                 pred_val = seg_pred.contiguous().cpu().data.numpy()
                 seg_pred = seg_pred.contiguous().view(-1, NUM_CLASSES)
