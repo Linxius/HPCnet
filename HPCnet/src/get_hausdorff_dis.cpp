@@ -17,7 +17,7 @@ int get_hausdorff_dis_wrapper_fast(at::Tensor neighbor_points_tensor,
                                    int batch_size, int whole_point_num,
                                    int keypoint_num, int neighbor_point_num,
                                    at::Tensor prior_points_tensor, at::Tensor dis_dicts_tensor,
-                                   float voxel_len){
+                                   float voxel_len, int gt_num){
     CHECK_INPUT(neighbor_points_tensor);
     CHECK_INPUT(features_tensor);
     // CHECK_INPUT(prior_points_tensor);
@@ -32,6 +32,6 @@ int get_hausdorff_dis_wrapper_fast(at::Tensor neighbor_points_tensor,
     get_hausdorff_dis_kernel_launcher_fast(neighbor_points, features,
                                            radius, batch_size,
                                            whole_point_num, keypoint_num, neighbor_point_num,
-                                           prior_points, dis_dicts, voxel_len, stream);
+                                           prior_points, dis_dicts, voxel_len, gt_num, stream);
     return 1;
 }

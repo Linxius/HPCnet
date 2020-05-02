@@ -12,6 +12,9 @@ import provider
 import importlib
 import shutil
 
+from HPCnet.getGtFeature import WITH_W
+from HPCnet.getGtFeature import HPC_LEN
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = BASE_DIR
 sys.path.append(os.path.join(ROOT_DIR, 'models'))
@@ -61,7 +64,7 @@ def main(args):
         print(str)
 
     '''HYPER PARAMETER'''
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    #os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     '''CREATE DIR'''
     timestr = str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M'))
@@ -202,4 +205,6 @@ def main(args):
 
 if __name__ == '__main__':
     args = parse_args()
+    print("HPC_LEN = " + str(HPC_LEN))
+    print("WITH_W = " + str(WITH_W))
     main(args)

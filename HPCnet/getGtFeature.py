@@ -12,6 +12,13 @@ import sys
 import numpy as np
 import HPCnet_cuda as HPCnet
 
+HPC_LEN = 42
+
+#WITH_W = False
+WITH_W = True
+
+DATA_ROOT = "/data"
+
 class getGtFeature(Function):
     @staticmethod
     def forward(ctx, whole_points: torch.Tensor, keypoints: torch.Tensor, \
@@ -23,7 +30,7 @@ class getGtFeature(Function):
         neighbor_points: B N nsample C
         output: feature: B M gt_num
         """
-        root = "./data/shapes/" + str(radius)
+        root = DATA_ROOT + "/Shapes" + str(HPC_LEN) + "/" + str(radius)
         prior_points, dis_dicts = LoadGivenShapes(root)
 
         dis_dicts = torch.cuda.FloatTensor(dis_dicts)
@@ -43,7 +50,7 @@ class getGtFeature(Function):
                                             batch_size, \
                                             whole_point_num, keypoint_num, neighbor_point_num, \
                                             prior_points, dis_dicts,\
-                                            voxel_len)
+                                            voxel_len, HPC_LEN)
 
         return 1-feature
 

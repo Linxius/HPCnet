@@ -5,7 +5,7 @@
 #include "get_hausdorff_dis_gpu.h"
 #include "cuda_utils.h"
 
-#define gt_num 42
+#define _gt_num_ 42
 #define voxel_dim 31
 #define dict_grid_num (voxel_dim*voxel_dim*voxel_dim)
 #define prior_point_num 10
@@ -16,7 +16,7 @@ __global__ void get_hausdorff_dis_kernel_fast(const float *__restrict__ neighbor
                                               int keypoint_num, int neighbor_point_num,
                                               const float* __restrict__ prior_points,
                                               const float* __restrict__ dis_dicts,
-                                              float voxel_len, cudaStream_t stream){
+                                              float voxel_len, int gt_num, cudaStream_t stream){
     // whole_points: B N C
     // keypoints: B M C
     // neighbor_points: B M nsample C
@@ -84,7 +84,7 @@ void get_hausdorff_dis_kernel_launcher_fast(const float*  neighbor_points,
                                             int batch_size, int whole_point_num, int keypoint_num,
                                             int neighbor_point_num,
                                             const float* prior_points, const float* dis_dicts,
-                                            float voxel_len, cudaStream_t stream){
+                                            float voxel_len, int gt_num, cudaStream_t stream){
     // whole_points: B N C
     // keypoints: B N C
     // neighbor_points: B N nsample C
@@ -100,7 +100,7 @@ void get_hausdorff_dis_kernel_launcher_fast(const float*  neighbor_points,
 
     get_hausdorff_dis_kernel_fast<<<blocks, threads, 0, stream>>>(
         neighbor_points, features, radius, batch_size, whole_point_num,
-        keypoint_num, neighbor_point_num, prior_points, dis_dicts, voxel_len, stream);
+        keypoint_num, neighbor_point_num, prior_points, dis_dicts, voxel_len, gt_num, stream);
 
     // cudaDeviceSynchronize();  // for using printf in kernel function
     err = cudaGetLastError();
